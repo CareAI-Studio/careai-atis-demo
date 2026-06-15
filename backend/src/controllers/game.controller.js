@@ -1,11 +1,46 @@
 const DEMO_SYMBOLS = [
-  { id: "robot", label: "🤖", multiplier: 4 },
-  { id: "heart", label: "♥", multiplier: 3 },
-  { id: "star", label: "★", multiplier: 3 },
-  { id: "chat", label: "💬", multiplier: 2 },
-  { id: "ai", label: "AI", multiplier: 5 },
-  { id: "diamond", label: "◆", multiplier: 4 },
-  { id: "bolt", label: "⚡", multiplier: 4 },
+  {
+    id: "robot",
+    label: "🤖",
+    className: "symbol--robot",
+    multiplier: 4,
+  },
+  {
+    id: "heart",
+    label: "♥",
+    className: "symbol--heart",
+    multiplier: 3,
+  },
+  {
+    id: "star",
+    label: "★",
+    className: "symbol--star",
+    multiplier: 3,
+  },
+  {
+    id: "chat",
+    label: "💬",
+    className: "symbol--chat",
+    multiplier: 2,
+  },
+  {
+    id: "ai",
+    label: "AI",
+    className: "symbol--ai",
+    multiplier: 5,
+  },
+  {
+    id: "diamond",
+    label: "◆",
+    className: "symbol--diamond",
+    multiplier: 4,
+  },
+  {
+    id: "bolt",
+    label: "⚡",
+    className: "symbol--bolt",
+    multiplier: 4,
+  },
 ];
 
 const PAYOUT_MULTIPLIERS = {

@@ -14,6 +14,10 @@ import {
 import { calculateWin } from "./logic/winCalculator.js";
 import { formatNumber } from "./logic/formatNumber.js";
 
+import { requestBackendSpin } from "../api/gameApi.js";
+
+const USE_BACKEND_SPIN = true;
+
 export class SlotGame {
   constructor(rootElement) {
     this.rootElement = rootElement;
@@ -213,7 +217,43 @@ export class SlotGame {
     this.updateUi();
   }
 
-  spin() {
+    async getFinalSpinGrid() {
+    if (!USE_BACKEND_SPIN) {
+      const localGrid = createDemoFinalGrid(DEMO_SYMBOLS, 0.28);
+      const localWinResult = calculateWin(localGrid, this.state.bet);
+
+      return {
+        grid: localGrid,
+        winResult: localWinResult,
+        source: "frontend",
+      };
+    }
+
+    try {
+      const backendResponse = await requestBackendSpin({
+        bet: this.state.bet,
+      });
+
+      return {
+        grid: backendResponse.grid,
+        winResult: backendResponse.result,
+        source: "backend",
+      };
+    } catch (error) {
+      console.warn("Backend spin failed, using local frontend spin.", error);
+
+      const fallbackGrid = createDemoFinalGrid(DEMO_SYMBOLS, 0.28);
+      const fallbackWinResult = calculateWin(fallbackGrid, this.state.bet);
+
+      return {
+        grid: fallbackGrid,
+        winResult: fallbackWinResult,
+        source: "frontend fallback",
+      };
+    }
+  }
+
+    spin() {
     if (this.state.isSpinning) return;
 
     if (this.state.credits < this.state.bet) {
@@ -226,7 +266,9 @@ export class SlotGame {
     this.state.win = 0;
     this.state.winningResult = null;
     this.state.credits -= this.state.bet;
-    this.state.status = "Točíme...";
+    this.state.status = USE_BACKEND_SPIN
+      ? "Točíme... výsledek připravuje backend API."
+      : "Točíme...";
     this.updateUi();
 
     this.randomSpinInterval = window.setInterval(() => {
@@ -234,11 +276,10 @@ export class SlotGame {
       this.renderGrid(randomGrid);
     }, 70);
 
-    this.spinTimeout = window.setTimeout(() => {
+    this.spinTimeout = window.setTimeout(async () => {
       window.clearInterval(this.randomSpinInterval);
 
-      const finalGrid = createDemoFinalGrid(DEMO_SYMBOLS, 0.28);
-      const winResult = calculateWin(finalGrid, this.state.bet);
+      const { grid: finalGrid, winResult, source } = await this.getFinalSpinGrid();
 
       this.state.grid = finalGrid;
       this.state.win = winResult.payout;
@@ -249,9 +290,9 @@ export class SlotGame {
       this.renderGrid(finalGrid);
 
       if (winResult.payout > 0) {
-        this.state.status = `Výhra ${formatNumber(winResult.payout)} kreditů. Symbol ${winResult.winningSymbol.label} × ${winResult.winningStreak} na prostřední linii.`;
+        this.state.status = `Výhra ${formatNumber(winResult.payout)} kreditů. Symbol ${winResult.winningSymbol.label} × ${winResult.winningStreak} na prostřední linii. Zdroj: ${source}.`;
       } else {
-        this.state.status = "Tentokrát bez výhry. Zkus další spin.";
+        this.state.status = `Tentokrát bez výhry. Zkus další spin. Zdroj: ${source}.`;
       }
 
       this.updateUi();
