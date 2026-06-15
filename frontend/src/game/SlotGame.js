@@ -18,9 +18,9 @@ import { requestBackendSpin } from "../api/gameApi.js";
 
 const USE_BACKEND_SPIN = true;
 
-const REEL_UPDATE_INTERVAL = 55;
 const REEL_STOP_DELAY = 320;
 const REEL_STOP_BOUNCE_TIME = 420;
+const STRIP_SYMBOL_COUNT = 18;
 
 export class SlotGame {
   constructor(rootElement) {
@@ -36,7 +36,7 @@ export class SlotGame {
       status: "Připraveno ke hře. Výhra se počítá na prostřední linii.",
     };
 
-    this.reelIntervals = [];
+    this.reelTimers = [];
     this.elements = {};
   }
 
@@ -171,22 +171,29 @@ export class SlotGame {
     reelElement.innerHTML = "";
 
     reel.forEach((symbol, rowIndex) => {
-      const symbolElement = document.createElement("div");
+      const symbolElement = this.createSymbolElement(symbol);
 
       const isWinningSymbol =
         rowIndex === 1 && winningIndexes.includes(reelIndex);
 
-      symbolElement.className = [
-        "slot-game__symbol",
-        symbol.className,
-        isWinningSymbol ? "slot-game__symbol--win" : "",
-      ]
-        .filter(Boolean)
-        .join(" ");
+      if (isWinningSymbol) {
+        symbolElement.classList.add("slot-game__symbol--win");
+      }
 
-      symbolElement.textContent = symbol.label;
       reelElement.append(symbolElement);
     });
+  }
+
+  createSymbolElement(symbol) {
+    const symbolElement = document.createElement("div");
+
+    symbolElement.className = ["slot-game__symbol", symbol.className]
+      .filter(Boolean)
+      .join(" ");
+
+    symbolElement.textContent = symbol.label;
+
+    return symbolElement;
   }
 
   renderSingleReel(reelIndex, reel, options = {}) {
@@ -196,7 +203,28 @@ export class SlotGame {
 
     if (!reelElement) return;
 
+    reelElement.className = "slot-game__reel";
+    reelElement.style.setProperty("--reel-delay", `${reelIndex * 70}ms`);
+
     this.renderReelSymbols(reelElement, reel, reelIndex, options);
+  }
+
+  renderReelStrip(reelElement, reelIndex) {
+    reelElement.innerHTML = "";
+    reelElement.classList.add("slot-game__reel--spinning");
+
+    const stripElement = document.createElement("div");
+    stripElement.className = "slot-game__reel-strip";
+    stripElement.style.setProperty("--strip-speed", `${0.62 + reelIndex * 0.08}s`);
+
+    for (let index = 0; index < STRIP_SYMBOL_COUNT; index += 1) {
+      const randomSymbol =
+        DEMO_SYMBOLS[Math.floor(Math.random() * DEMO_SYMBOLS.length)];
+
+      stripElement.append(this.createSymbolElement(randomSymbol));
+    }
+
+    reelElement.append(stripElement);
   }
 
   getWinningMiddleIndexes() {
@@ -288,19 +316,12 @@ export class SlotGame {
     return "lokální demo";
   }
 
-  getRandomReel() {
-    const grid = createRandomGrid(DEMO_SYMBOLS);
-    const randomIndex = Math.floor(Math.random() * grid.length);
-
-    return grid[randomIndex];
-  }
-
-  clearReelIntervals() {
-    this.reelIntervals.forEach((intervalId) => {
-      window.clearInterval(intervalId);
+  clearReelTimers() {
+    this.reelTimers.forEach((timerId) => {
+      window.clearTimeout(timerId);
     });
 
-    this.reelIntervals = [];
+    this.reelTimers = [];
   }
 
   sleep(ms) {
@@ -310,7 +331,7 @@ export class SlotGame {
   }
 
   startReelAnimation() {
-    this.clearReelIntervals();
+    this.clearReelTimers();
 
     const initialGrid = createRandomGrid(DEMO_SYMBOLS);
     this.renderGrid(initialGrid, {
@@ -322,16 +343,7 @@ export class SlotGame {
     );
 
     reelElements.forEach((reelElement, reelIndex) => {
-      reelElement.classList.add("slot-game__reel--spinning");
-
-      const intervalId = window.setInterval(() => {
-        const randomReel = this.getRandomReel();
-        this.renderSingleReel(reelIndex, randomReel, {
-          suppressWinHighlight: true,
-        });
-      }, REEL_UPDATE_INTERVAL + reelIndex * 8);
-
-      this.reelIntervals.push(intervalId);
+      this.renderReelStrip(reelElement, reelIndex);
     });
   }
 
@@ -347,25 +359,21 @@ export class SlotGame {
 
       if (!reelElement) continue;
 
-      const intervalId = this.reelIntervals[reelIndex];
-
-      if (intervalId) {
-        window.clearInterval(intervalId);
-      }
-
       reelElement.classList.remove("slot-game__reel--spinning");
       reelElement.classList.add("slot-game__reel--stopping");
 
-      this.renderSingleReel(reelIndex, finalGrid[reelIndex], {
+      this.renderReelSymbols(reelElement, finalGrid[reelIndex], reelIndex, {
         suppressWinHighlight: true,
       });
 
-      window.setTimeout(() => {
+      const timerId = window.setTimeout(() => {
         reelElement.classList.remove("slot-game__reel--stopping");
       }, REEL_STOP_BOUNCE_TIME);
+
+      this.reelTimers.push(timerId);
     }
 
-    this.clearReelIntervals();
+    this.clearReelTimers();
   }
 
   async spin() {
@@ -388,12 +396,12 @@ export class SlotGame {
 
     this.startReelAnimation();
 
-    const finalSpinPromise = this.getFinalSpinGrid();
-
-    const { grid: finalGrid, winResult, source } = await Promise.all([
-      finalSpinPromise,
+    const spinResult = await Promise.all([
+      this.getFinalSpinGrid(),
       this.sleep(SPIN_DURATION),
-    ]).then(([spinResult]) => spinResult);
+    ]).then(([result]) => result);
+
+    const { grid: finalGrid, winResult, source } = spinResult;
 
     await this.stopReelsOneByOne(finalGrid);
 

@@ -1161,9 +1161,12 @@ button {
   }
 }
 
-/* Smooth reels animation - DOM version before PixiJS */
+/* Reel strip animation - DOM version before PixiJS */
 .slot-game__reels {
+  position: relative;
   perspective: 900px;
+  --slot-symbol-height: 118px;
+  --slot-reel-gap: 12px;
 }
 
 .slot-game__reel {
@@ -1173,23 +1176,74 @@ button {
   will-change: transform, filter;
 }
 
-.slot-game__reel--spinning {
-  animation: careai-reel-shake 0.18s linear infinite;
+.slot-game__frame.is-spinning .slot-game__reel {
+  animation: none;
 }
 
-.slot-game__reel--spinning .slot-game__symbol {
-  filter: blur(1.8px);
-  opacity: 0.82;
-  transform: translateY(-3px) scale(0.98);
+.slot-game__frame.is-spinning .slot-game__symbol {
+  filter: none;
+  transform: none;
+}
+
+.slot-game__reel--spinning {
+  display: block;
+  height: calc((var(--slot-symbol-height) * 3) + (var(--slot-reel-gap) * 2));
+  border-radius: 24px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(19, 44, 95, 0.48),
+      rgba(4, 15, 41, 0.78)
+    );
+  box-shadow:
+    inset 0 18px 24px rgba(255, 255, 255, 0.06),
+    inset 0 -18px 24px rgba(0, 0, 0, 0.26);
+}
+
+.slot-game__reel-strip {
+  display: grid;
+  gap: var(--slot-reel-gap);
+  animation: careai-reel-strip-spin var(--strip-speed) linear infinite;
+  will-change: transform;
+}
+
+.slot-game__reel-strip .slot-game__symbol {
+  height: var(--slot-symbol-height);
+  filter: blur(1.4px) brightness(1.16);
+  opacity: 0.88;
+  transform: scale(0.96);
+  border-color: rgba(95, 181, 255, 0.12);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(17, 42, 91, 0.8),
+      rgba(5, 16, 43, 0.82)
+    );
+}
+
+.slot-game__reel--spinning::before,
+.slot-game__reel--spinning::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  height: 28%;
+  pointer-events: none;
+}
+
+.slot-game__reel--spinning::before {
+  top: 0;
+  background: linear-gradient(180deg, rgba(2, 10, 26, 0.82), transparent);
+}
+
+.slot-game__reel--spinning::after {
+  bottom: 0;
+  background: linear-gradient(0deg, rgba(2, 10, 26, 0.82), transparent);
 }
 
 .slot-game__reel--stopping {
   animation: careai-reel-stop 0.42s cubic-bezier(0.2, 1.35, 0.28, 1);
-}
-
-.slot-game__reel--stopping .slot-game__symbol {
-  filter: blur(0);
-  opacity: 1;
 }
 
 .slot-game__frame.is-spinning .slot-game__spin-icon {
@@ -1199,30 +1253,27 @@ button {
 .slot-game__frame.is-spinning .slot-game__reels::after {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: 16px;
+  border-radius: 26px;
   pointer-events: none;
   background:
     linear-gradient(
       to bottom,
-      rgba(255, 255, 255, 0.14),
-      rgba(255, 255, 255, 0) 28%,
-      rgba(255, 255, 255, 0) 72%,
-      rgba(255, 255, 255, 0.12)
+      rgba(255, 255, 255, 0.12),
+      rgba(255, 255, 255, 0) 24%,
+      rgba(255, 255, 255, 0) 74%,
+      rgba(255, 255, 255, 0.1)
     );
   mix-blend-mode: screen;
 }
 
-@keyframes careai-reel-shake {
+@keyframes careai-reel-strip-spin {
   0% {
-    transform: translateY(-4px) scaleY(1.02);
-  }
-
-  50% {
-    transform: translateY(4px) scaleY(0.98);
+    transform: translateY(calc((var(--slot-symbol-height) + var(--slot-reel-gap)) * -9));
   }
 
   100% {
-    transform: translateY(-4px) scaleY(1.02);
+    transform: translateY(0);
   }
 }
 
@@ -1246,10 +1297,20 @@ button {
 
 @keyframes careai-spin-button-rotate {
   from {
-    transform: rotate(0deg);
+    transform: translateY(-2px) rotate(0deg);
   }
 
   to {
-    transform: rotate(360deg);
+    transform: translateY(-2px) rotate(360deg);
+  }
+}
+
+@media (max-width: 720px) {
+  .slot-game__reels {
+    --slot-symbol-height: 88px;
+  }
+
+  .slot-game__reel--spinning {
+    min-width: 56px;
   }
 }
