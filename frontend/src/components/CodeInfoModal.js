@@ -19,32 +19,57 @@ export function createCodeInfoModal() {
 
         <p class="code-modal__text">
           Ukázkový frontend herní prototyp pro pozici Frontend Game Developer / PixiJS Developer.
-          Projekt je rozdělený na samostatné UI komponenty, herní konfiguraci a čistou logiku výpočtu výsledků.
+          Projekt kombinuje responzivní UI, herní logiku, DOM animaci válců, backend API v Node.js / Express
+          a bezpečný frontend fallback při nedostupném serveru.
         </p>
 
         <div class="code-modal__grid">
           <div class="code-modal__card">
-            <h3>Komponenty</h3>
-            <p>Header, hero sekce, demo modal a samostatný informační panel.</p>
+            <h3>Frontend UI</h3>
+            <p>Header, hero sekce, demo modal, informační panel a samostatné komponenty pro prezentaci projektu.</p>
             <code>src/components/</code>
           </div>
 
           <div class="code-modal__card">
-            <h3>Herní UI</h3>
-            <p>SlotGame řeší vykreslení automatu, stav hry, sázky, kredity a interakce.</p>
+            <h3>Herní automat</h3>
+            <p>SlotGame řeší vykreslení automatu, stav hry, kredity, sázku, výhru, spin a postupné zastavení válců.</p>
             <code>src/game/SlotGame.js</code>
           </div>
 
           <div class="code-modal__card">
+            <h3>Backend spin API</h3>
+            <p>Spin volá backend endpoint, který vrací výslednou mřížku symbolů, výhru a informace o výherní linii.</p>
+            <code>POST /api/game/spin</code>
+          </div>
+
+          <div class="code-modal__card">
+            <h3>Fallback režim</h3>
+            <p>Když backend neběží, frontend zachytí chybu a použije lokální výpočet, takže demo zůstává funkční.</p>
+            <code>src/api/gameApi.js</code>
+          </div>
+
+          <div class="code-modal__card">
             <h3>Herní logika</h3>
-            <p>Výpočet výhry, generování symbolů a formátování jsou oddělené od UI.</p>
+            <p>Výpočet výhry, generování symbolů a formátování hodnot jsou oddělené od UI vrstvy.</p>
             <code>src/game/logic/</code>
           </div>
 
           <div class="code-modal__card">
-            <h3>Další rozšíření</h3>
-            <p>Projekt je připravený na PixiJS canvas, backend, statistiky nebo leaderboard.</p>
-            <code>Node.js / Express později</code>
+            <h3>Reel strip animace</h3>
+            <p>Během spinu se každý sloupec vykreslí jako svislý pás symbolů a zastavuje se postupně zleva doprava.</p>
+            <code>DOM / CSS animation</code>
+          </div>
+
+          <div class="code-modal__card">
+            <h3>Další krok</h3>
+            <p>Současná DOM verze je připravená jako prototyp pro pozdější převod válců a efektů na PixiJS canvas.</p>
+            <code>PixiJS canvas ready</code>
+          </div>
+
+          <div class="code-modal__card">
+            <h3>Struktura projektu</h3>
+            <p>Frontend a backend jsou oddělené části projektu, které lze spustit společně z kořene přes jeden příkaz.</p>
+            <code>npm run dev</code>
           </div>
         </div>
 
@@ -52,8 +77,10 @@ export function createCodeInfoModal() {
           <span>Stack:</span>
           <strong>Vite</strong>
           <strong>JavaScript</strong>
+          <strong>Node.js</strong>
+          <strong>Express</strong>
+          <strong>API fallback</strong>
           <strong>PixiJS ready</strong>
-          <strong>GSAP ready</strong>
         </div>
       </div>
     </div>
