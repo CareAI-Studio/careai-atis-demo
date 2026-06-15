@@ -51,31 +51,26 @@ export class SlotGame {
 
   renderShell() {
     this.rootElement.innerHTML = `
-      <div class="slot-game">
+      <div class="slot-game slot-game--premium">
         <div class="slot-game__frame">
           <div class="slot-game__top">
             <div class="slot-game__mode">DEMO REŽIM</div>
-            <div class="slot-game__title">✦ CAREAI SLOT ✦</div>
-          </div>
-
-          <div class="slot-game__machine">
-            <div class="slot-game__lines slot-game__lines--left">
-              <span>25</span>
-              <small>LINES</small>
-            </div>
-
-            <div class="slot-game__reels" data-reels></div>
-
-            <div class="slot-game__lines slot-game__lines--right">
-              <span>25</span>
-              <small>LINES</small>
+            <div class="slot-game__title">
+              <span class="slot-game__title-mark">✦</span>
+              <span>CAREAI SLOT</span>
+              <span class="slot-game__title-mark">✦</span>
             </div>
           </div>
 
-          <div class="slot-game__controls">
-            <div class="slot-game__info-panel">
+          <div class="slot-game__premium-bar">
+            <div class="slot-game__info-panel slot-game__info-panel--credits">
               <span class="slot-game__info-label">KREDITY</span>
               <strong data-credits>0</strong>
+            </div>
+
+            <div class="slot-game__premium-brand">
+              <span class="slot-game__premium-crown">♛</span>
+              <span class="slot-game__premium-name">CAREAI</span>
             </div>
 
             <div class="slot-game__bet-box">
@@ -86,9 +81,44 @@ export class SlotGame {
                 <button type="button" class="slot-game__small-btn" data-action="increase-bet">+</button>
               </div>
             </div>
+          </div>
+
+          <div class="slot-game__machine">
+            <div class="slot-game__lines slot-game__lines--left">
+              <span>25</span>
+              <small>LINES</small>
+            </div>
+
+            <div class="slot-game__reels-wrap">
+              <button type="button" class="slot-game__side-arrow slot-game__side-arrow--left" aria-label="Dekorativní levá šipka">
+                ‹
+              </button>
+
+              <div class="slot-game__reels" data-reels></div>
+
+              <button type="button" class="slot-game__side-arrow slot-game__side-arrow--right" aria-label="Dekorativní pravá šipka">
+                ›
+              </button>
+            </div>
+
+            <div class="slot-game__lines slot-game__lines--right">
+              <span>25</span>
+              <small>LINES</small>
+            </div>
+          </div>
+
+          <div class="slot-game__premium-controls">
+            <button type="button" class="slot-game__feature-btn" aria-label="Dekorativní Turbo">
+              ⚡ TURBO
+            </button>
+
+            <button type="button" class="slot-game__feature-btn" aria-label="Dekorativní Auto">
+              ↻ AUTO
+            </button>
 
             <button type="button" class="slot-game__spin-btn" data-action="spin" aria-label="Spustit spin">
               <span class="slot-game__spin-icon">↻</span>
+              <span class="slot-game__spin-text">SPIN</span>
             </button>
 
             <button type="button" class="slot-game__max-btn" data-action="max-bet">
