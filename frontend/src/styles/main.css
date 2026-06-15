@@ -1334,4 +1334,399 @@ button {
   .slot-game__reel--spinning {
     min-width: 56px;
   }
+}¨
+
+/* Visual polish v1.1.2 - neon slot presentation */
+
+/* Jemné živější pozadí celé stránky */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 28%, rgba(33, 212, 253, 0.12), transparent 26%),
+    radial-gradient(circle at 82% 22%, rgba(170, 59, 255, 0.12), transparent 24%),
+    radial-gradient(circle at 50% 82%, rgba(255, 204, 71, 0.08), transparent 28%);
+  animation: careaiAmbientGlow 9s ease-in-out infinite alternate;
+}
+
+/* Luxusnější rám automatu */
+.slot-game__frame {
+  position: relative;
+  overflow: hidden;
+}
+
+.slot-game__frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      120deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.08) 18%,
+      transparent 38%
+    );
+  transform: translateX(-110%);
+  opacity: 0.7;
+}
+
+.slot-game__frame.is-spinning::before {
+  animation: careaiFrameSweep 1.8s ease-in-out infinite;
+}
+
+.slot-game__frame::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 30px rgba(45, 174, 255, 0.12),
+    inset 0 0 70px rgba(109, 77, 255, 0.08);
+}
+
+/* Výraznější titul */
+.slot-game__title {
+  position: relative;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #ffffff 0%, #7ce2ff 34%, #21d4fd 55%, #ffd66b 86%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.slot-game__title::after {
+  content: "";
+  display: block;
+  width: min(420px, 70%);
+  height: 2px;
+  margin: 12px auto 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(124, 226, 255, 0.9), rgba(255, 204, 71, 0.85), transparent);
+  box-shadow: 0 0 16px rgba(124, 226, 255, 0.45);
+}
+
+/* Reels jako skleněné okno */
+.slot-game__reels {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at center, rgba(45, 174, 255, 0.12), transparent 62%),
+    linear-gradient(180deg, rgba(5, 18, 48, 1), rgba(2, 10, 26, 1));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 16px 30px rgba(255, 255, 255, 0.06),
+    inset 0 -20px 35px rgba(0, 0, 0, 0.34),
+    0 0 22px rgba(39, 155, 255, 0.24),
+    0 0 44px rgba(109, 77, 255, 0.1);
+}
+
+/* Skleněný lesk přes válce */
+.slot-game__reels::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: 26px;
+  background:
+    linear-gradient(
+      115deg,
+      rgba(255, 255, 255, 0.18) 0%,
+      rgba(255, 255, 255, 0.05) 22%,
+      transparent 42%
+    );
+  opacity: 0.55;
+}
+
+/* Neonová prostřední výherní linie */
+.slot-game__reels::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 50%;
+  z-index: 4;
+  height: 3px;
+  pointer-events: none;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, #ffd75a 12%, #fff4a8 50%, #ffd75a 88%, transparent);
+  box-shadow:
+    0 0 10px rgba(255, 215, 90, 0.85),
+    0 0 24px rgba(255, 215, 90, 0.42),
+    0 0 42px rgba(45, 174, 255, 0.22);
+  opacity: 0.48;
+  transform: translateY(-50%);
+}
+
+.slot-game__frame.has-win .slot-game__reels::after {
+  opacity: 1;
+  animation: careaiPaylineWin 0.7s ease-in-out 4;
+}
+
+/* Koncové body payline */
+.slot-game__reels {
+  --payline-dot-size: 14px;
+}
+
+.slot-game__reels .slot-game__reel:first-child::before,
+.slot-game__reels .slot-game__reel:last-child::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  z-index: 5;
+  width: var(--payline-dot-size);
+  height: var(--payline-dot-size);
+  border-radius: 50%;
+  pointer-events: none;
+  background: #fff0a2;
+  box-shadow:
+    0 0 10px rgba(255, 215, 90, 0.95),
+    0 0 22px rgba(255, 215, 90, 0.55);
+  transform: translateY(-50%);
+  opacity: 0.72;
+}
+
+.slot-game__reels .slot-game__reel:first-child::before {
+  left: -7px;
+}
+
+.slot-game__reels .slot-game__reel:last-child::before {
+  right: -7px;
+}
+
+/* Hezčí symboly */
+.slot-game__symbol {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(95, 181, 255, 0.16);
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.12), transparent 42%),
+    linear-gradient(180deg, rgba(16, 38, 84, 0.96), rgba(6, 17, 44, 0.96));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    inset 0 12px 18px rgba(255, 255, 255, 0.04),
+    0 10px 22px rgba(0, 0, 0, 0.18);
+}
+
+.slot-game__symbol::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.16),
+      transparent 34%,
+      rgba(45, 174, 255, 0.05) 74%,
+      rgba(255, 255, 255, 0.04)
+    );
+  opacity: 0.65;
+}
+
+/* Při spinu víc energie */
+.slot-game__frame.is-spinning .slot-game__reels {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 16px 30px rgba(255, 255, 255, 0.06),
+    inset 0 -20px 35px rgba(0, 0, 0, 0.34),
+    0 0 28px rgba(39, 155, 255, 0.35),
+    0 0 68px rgba(109, 77, 255, 0.16);
+}
+
+.slot-game__frame.is-spinning .slot-game__reel--spinning {
+  box-shadow:
+    inset 0 20px 28px rgba(255, 255, 255, 0.07),
+    inset 0 -22px 30px rgba(0, 0, 0, 0.34),
+    0 0 18px rgba(45, 174, 255, 0.12);
+}
+
+/* Lepší docvaknutí válce */
+.slot-game__reel--stopping {
+  animation: careaiPolishedReelStop 0.48s cubic-bezier(0.18, 1.45, 0.32, 1);
+}
+
+/* Výherní symboly víc svítí */
+.slot-game__symbol--win {
+  border-color: rgba(255, 218, 85, 0.95);
+  background:
+    radial-gradient(circle at center, rgba(255, 215, 79, 0.28), transparent 58%),
+    radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.16), transparent 35%),
+    linear-gradient(180deg, rgba(26, 50, 101, 0.98), rgba(9, 25, 60, 0.98));
+  box-shadow:
+    0 0 20px rgba(255, 212, 72, 0.6),
+    0 0 42px rgba(255, 212, 72, 0.22),
+    inset 0 0 22px rgba(255, 212, 72, 0.2);
+}
+
+/* VÝHRA panel jako jackpot */
+.slot-game__frame.has-win .slot-game__info-panel--win {
+  border-color: rgba(255, 218, 85, 0.72);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 218, 85, 0.1),
+    0 0 22px rgba(255, 218, 85, 0.24);
+  animation: careaiWinPanelPulse 0.75s ease-in-out 4;
+}
+
+/* Spin tlačítko luxusnější */
+.slot-game__spin-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.slot-game__spin-btn::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  pointer-events: none;
+}
+
+.slot-game__spin-btn::after {
+  content: "";
+  position: absolute;
+  inset: -35%;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 36%, rgba(255, 255, 255, 0.34), transparent 64%);
+  transform: translateX(-80%) rotate(18deg);
+}
+
+.slot-game__spin-btn:hover::after {
+  animation: careaiButtonSweep 0.75s ease-out;
+}
+
+/* Status panel jemně rozsvítit */
+.slot-game__status {
+  box-shadow:
+    inset 0 0 0 1px rgba(95, 181, 255, 0.04),
+    0 0 18px rgba(45, 174, 255, 0.06);
+}
+
+.slot-game__frame.has-win .slot-game__status {
+  color: rgba(255, 244, 200, 0.92);
+  border-color: rgba(255, 218, 85, 0.26);
+}
+
+/* Side lines panel polish */
+.slot-game__lines {
+  position: relative;
+  overflow: hidden;
+}
+
+.slot-game__lines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.16),
+      transparent 36%,
+      rgba(45, 174, 255, 0.08)
+    );
+  pointer-events: none;
+}
+
+/* Animace */
+@keyframes careaiAmbientGlow {
+  from {
+    opacity: 0.55;
+    filter: blur(0);
+  }
+
+  to {
+    opacity: 0.9;
+    filter: blur(1px);
+  }
+}
+
+@keyframes careaiFrameSweep {
+  0% {
+    transform: translateX(-110%);
+  }
+
+  46%,
+  100% {
+    transform: translateX(110%);
+  }
+}
+
+@keyframes careaiPaylineWin {
+  0% {
+    transform: translateY(-50%) scaleX(0.88);
+    opacity: 0.45;
+  }
+
+  50% {
+    transform: translateY(-50%) scaleX(1.03);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-50%) scaleX(1);
+    opacity: 0.76;
+  }
+}
+
+@keyframes careaiPolishedReelStop {
+  0% {
+    transform: translateY(-24px) scaleY(1.1);
+    filter: blur(1px);
+  }
+
+  48% {
+    transform: translateY(10px) scaleY(0.95);
+    filter: blur(0);
+  }
+
+  72% {
+    transform: translateY(-4px) scaleY(1.03);
+  }
+
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+}
+
+@keyframes careaiWinPanelPulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.035);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes careaiButtonSweep {
+  from {
+    transform: translateX(-80%) rotate(18deg);
+  }
+
+  to {
+    transform: translateX(80%) rotate(18deg);
+  }
+}
+
+@media (max-width: 720px) {
+  .slot-game__reels::after {
+    left: 12px;
+    right: 12px;
+  }
+
+  .slot-game__title::after {
+    width: 82%;
+  }
 }
