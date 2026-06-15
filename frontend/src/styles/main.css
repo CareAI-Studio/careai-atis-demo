@@ -2141,3 +2141,133 @@ body::before {
     font-size: 0.9rem;
   }
 }
+
+/* Premium layout cleanup v1.1.4 */
+
+/* Jemnější payline v běžném stavu */
+.slot-game--premium .slot-game__reels::after {
+  height: 2px;
+  opacity: 0.28;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 215, 90, 0.55) 14%,
+    rgba(255, 244, 168, 0.8) 50%,
+    rgba(255, 215, 90, 0.55) 86%,
+    transparent
+  );
+  box-shadow:
+    0 0 8px rgba(255, 215, 90, 0.48),
+    0 0 18px rgba(255, 215, 90, 0.2);
+}
+
+/* Payline se naplno rozsvítí až při výhře */
+.slot-game--premium .slot-game__frame.has-win .slot-game__reels::after {
+  height: 3px;
+  opacity: 1;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #ffd75a 12%,
+    #fff4a8 50%,
+    #ffd75a 88%,
+    transparent
+  );
+  box-shadow:
+    0 0 12px rgba(255, 215, 90, 0.9),
+    0 0 28px rgba(255, 215, 90, 0.5),
+    0 0 48px rgba(45, 174, 255, 0.24);
+}
+
+/* Tečky payline méně rušivé bez výhry */
+.slot-game--premium .slot-game__reels .slot-game__reel:first-child::before,
+.slot-game--premium .slot-game__reels .slot-game__reel:last-child::before {
+  width: 10px;
+  height: 10px;
+  opacity: 0.42;
+}
+
+.slot-game--premium .slot-game__frame.has-win .slot-game__reels .slot-game__reel:first-child::before,
+.slot-game--premium .slot-game__frame.has-win .slot-game__reels .slot-game__reel:last-child::before {
+  width: 14px;
+  height: 14px;
+  opacity: 0.92;
+}
+
+/* Šipky odsunout od panelů 25 LINES */
+.slot-game--premium .slot-game__side-arrow {
+  width: 40px;
+  height: 78px;
+  font-size: 2.6rem;
+  opacity: 0.82;
+}
+
+.slot-game--premium .slot-game__side-arrow--left {
+  left: -14px;
+}
+
+.slot-game--premium .slot-game__side-arrow--right {
+  right: -14px;
+}
+
+/* Trochu menší a čistší boční panely */
+.slot-game--premium .slot-game__lines {
+  width: 68px;
+  justify-self: center;
+  opacity: 0.96;
+}
+
+.slot-game--premium .slot-game__lines span {
+  font-size: 2.15rem;
+}
+
+/* Větší prostor mezi horním brandem a válci */
+.slot-game--premium .slot-game__premium-bar {
+  margin-bottom: 24px;
+}
+
+/* Horní zlatý CAREAI brand lehce zmenšit, aby nepůsobil nalepeně */
+.slot-game--premium .slot-game__premium-brand {
+  min-height: 66px;
+  min-width: 280px;
+}
+
+.slot-game--premium .slot-game__premium-name {
+  font-size: clamp(2rem, 3vw, 3.25rem);
+}
+
+.slot-game--premium .slot-game__premium-crown {
+  top: -28px;
+  font-size: 2.35rem;
+}
+
+/* Trochu větší vzduch kolem spodních ovládacích prvků */
+.slot-game--premium .slot-game__premium-controls {
+  margin-top: 28px;
+}
+
+/* Turbo / Auto jako jasné sekundární placeholder prvky */
+.slot-game--premium .slot-game__feature-btn {
+  opacity: 0.86;
+}
+
+.slot-game--premium .slot-game__feature-btn:hover {
+  opacity: 1;
+}
+
+/* Status text méně natlačený */
+.slot-game--premium .slot-game__status {
+  margin-top: 20px;
+  padding-inline: 24px;
+}
+
+/* Při menší obrazovce nenechat šipky lézt do stran */
+@media (max-width: 920px) {
+  .slot-game--premium .slot-game__side-arrow {
+    display: none;
+  }
+
+  .slot-game--premium .slot-game__premium-brand {
+    min-width: 0;
+  }
+}
