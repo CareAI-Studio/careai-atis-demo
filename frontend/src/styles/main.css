@@ -1160,3 +1160,96 @@ button {
     padding: 28px;
   }
 }
+
+/* Smooth reels animation - DOM version before PixiJS */
+.slot-game__reels {
+  perspective: 900px;
+}
+
+.slot-game__reel {
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0);
+  will-change: transform, filter;
+}
+
+.slot-game__reel--spinning {
+  animation: careai-reel-shake 0.18s linear infinite;
+}
+
+.slot-game__reel--spinning .slot-game__symbol {
+  filter: blur(1.8px);
+  opacity: 0.82;
+  transform: translateY(-3px) scale(0.98);
+}
+
+.slot-game__reel--stopping {
+  animation: careai-reel-stop 0.42s cubic-bezier(0.2, 1.35, 0.28, 1);
+}
+
+.slot-game__reel--stopping .slot-game__symbol {
+  filter: blur(0);
+  opacity: 1;
+}
+
+.slot-game__frame.is-spinning .slot-game__spin-icon {
+  animation: careai-spin-button-rotate 0.7s linear infinite;
+}
+
+.slot-game__frame.is-spinning .slot-game__reels::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.14),
+      rgba(255, 255, 255, 0) 28%,
+      rgba(255, 255, 255, 0) 72%,
+      rgba(255, 255, 255, 0.12)
+    );
+  mix-blend-mode: screen;
+}
+
+@keyframes careai-reel-shake {
+  0% {
+    transform: translateY(-4px) scaleY(1.02);
+  }
+
+  50% {
+    transform: translateY(4px) scaleY(0.98);
+  }
+
+  100% {
+    transform: translateY(-4px) scaleY(1.02);
+  }
+}
+
+@keyframes careai-reel-stop {
+  0% {
+    transform: translateY(-18px) scaleY(1.08);
+  }
+
+  55% {
+    transform: translateY(8px) scaleY(0.96);
+  }
+
+  78% {
+    transform: translateY(-3px) scaleY(1.02);
+  }
+
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+}
+
+@keyframes careai-spin-button-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
