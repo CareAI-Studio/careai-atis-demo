@@ -261,7 +261,7 @@ export class SlotGame {
     return "lokální demo";
   }
 
-  spin() {
+    spin() {
     if (this.state.isSpinning) return;
 
     if (this.state.credits < this.state.bet) {
@@ -279,19 +279,21 @@ export class SlotGame {
       : "Točíme...";
     this.updateUi();
 
+    const finalSpinPromise = this.getFinalSpinGrid();
+
     this.randomSpinInterval = window.setInterval(() => {
       const randomGrid = createRandomGrid(DEMO_SYMBOLS);
       this.renderGrid(randomGrid);
     }, 70);
 
     this.spinTimeout = window.setTimeout(async () => {
-      window.clearInterval(this.randomSpinInterval);
-
       const {
         grid: finalGrid,
         winResult,
         source,
-      } = await this.getFinalSpinGrid();
+      } = await finalSpinPromise;
+
+      window.clearInterval(this.randomSpinInterval);
 
       const resultSourceLabel = this.getResultSourceLabel(source);
 
