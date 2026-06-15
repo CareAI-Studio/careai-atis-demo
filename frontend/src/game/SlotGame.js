@@ -53,7 +53,7 @@ export class SlotGame {
           <div class="slot-game__top">
             <div class="slot-game__mode">DEMO REŽIM</div>
             <div class="slot-game__title">✦ CAREAI SLOT ✦</div>
-        </div>
+          </div>
 
           <div class="slot-game__machine">
             <div class="slot-game__lines slot-game__lines--left">
@@ -217,7 +217,7 @@ export class SlotGame {
     this.updateUi();
   }
 
-    async getFinalSpinGrid() {
+  async getFinalSpinGrid() {
     if (!USE_BACKEND_SPIN) {
       const localGrid = createDemoFinalGrid(DEMO_SYMBOLS, 0.28);
       const localWinResult = calculateWin(localGrid, this.state.bet);
@@ -253,7 +253,15 @@ export class SlotGame {
     }
   }
 
-    spin() {
+  getResultSourceLabel(source) {
+    if (source === "backend") {
+      return "backend API";
+    }
+
+    return "lokální demo";
+  }
+
+  spin() {
     if (this.state.isSpinning) return;
 
     if (this.state.credits < this.state.bet) {
@@ -267,7 +275,7 @@ export class SlotGame {
     this.state.winningResult = null;
     this.state.credits -= this.state.bet;
     this.state.status = USE_BACKEND_SPIN
-      ? "Točíme... výsledek připravuje backend API."
+      ? "Točíme... výsledek připravuje herní API."
       : "Točíme...";
     this.updateUi();
 
@@ -279,7 +287,13 @@ export class SlotGame {
     this.spinTimeout = window.setTimeout(async () => {
       window.clearInterval(this.randomSpinInterval);
 
-      const { grid: finalGrid, winResult, source } = await this.getFinalSpinGrid();
+      const {
+        grid: finalGrid,
+        winResult,
+        source,
+      } = await this.getFinalSpinGrid();
+
+      const resultSourceLabel = this.getResultSourceLabel(source);
 
       this.state.grid = finalGrid;
       this.state.win = winResult.payout;
@@ -290,9 +304,9 @@ export class SlotGame {
       this.renderGrid(finalGrid);
 
       if (winResult.payout > 0) {
-        this.state.status = `Výhra ${formatNumber(winResult.payout)} kreditů. Symbol ${winResult.winningSymbol.label} × ${winResult.winningStreak} na prostřední linii. Zdroj: ${source}.`;
+        this.state.status = `Výhra ${formatNumber(winResult.payout)} kreditů. Symbol ${winResult.winningSymbol.label} × ${winResult.winningStreak} na prostřední linii. Výsledek připravilo ${resultSourceLabel}.`;
       } else {
-        this.state.status = `Tentokrát bez výhry. Zkus další spin. Zdroj: ${source}.`;
+        this.state.status = `Tentokrát bez výhry. Zkus další spin. Výsledek připravilo ${resultSourceLabel}.`;
       }
 
       this.updateUi();
