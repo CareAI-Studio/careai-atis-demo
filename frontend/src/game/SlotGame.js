@@ -7,7 +7,10 @@ import {
   DEMO_SYMBOLS,
 } from "./gameConfig.js";
 
-import { createRandomGrid } from "./logic/createRandomGrid.js";
+import {
+  createRandomGrid,
+  createDemoFinalGrid,
+} from "./logic/createRandomGrid.js";
 import { calculateWin } from "./logic/winCalculator.js";
 import { formatNumber } from "./logic/formatNumber.js";
 
@@ -21,6 +24,7 @@ export class SlotGame {
       win: 0,
       isSpinning: false,
       grid: [],
+      winningResult: null,
       status: "Připraveno ke hře. Výhra se počítá na prostřední linii.",
     };
 
@@ -118,19 +122,43 @@ export class SlotGame {
   renderGrid(grid) {
     this.elements.reels.innerHTML = "";
 
-    grid.forEach((reel) => {
+    const winningIndexes = this.getWinningMiddleIndexes();
+
+    grid.forEach((reel, reelIndex) => {
       const reelElement = document.createElement("div");
       reelElement.className = "slot-game__reel";
+      reelElement.style.setProperty("--reel-delay", `${reelIndex * 70}ms`);
 
-      reel.forEach((symbol) => {
+      reel.forEach((symbol, rowIndex) => {
         const symbolElement = document.createElement("div");
-        symbolElement.className = `slot-game__symbol ${symbol.className}`;
+
+        const isWinningSymbol =
+          rowIndex === 1 && winningIndexes.includes(reelIndex);
+
+        symbolElement.className = [
+          "slot-game__symbol",
+          symbol.className,
+          isWinningSymbol ? "slot-game__symbol--win" : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+
         symbolElement.textContent = symbol.label;
         reelElement.append(symbolElement);
       });
 
       this.elements.reels.append(reelElement);
     });
+  }
+
+  getWinningMiddleIndexes() {
+    const result = this.state.winningResult;
+
+    if (!result || result.payout <= 0 || result.winningStreak < 3) {
+      return [];
+    }
+
+    return Array.from({ length: result.winningStreak }, (_, index) => index);
   }
 
   updateUi() {
@@ -145,6 +173,10 @@ export class SlotGame {
     this.elements.increaseBetButton.disabled = this.state.isSpinning;
 
     this.elements.frame.classList.toggle("is-spinning", this.state.isSpinning);
+    this.elements.frame.classList.toggle(
+      "has-win",
+      Boolean(this.state.winningResult && this.state.winningResult.payout > 0)
+    );
   }
 
   changeBet(step) {
@@ -175,6 +207,7 @@ export class SlotGame {
 
     this.state.isSpinning = true;
     this.state.win = 0;
+    this.state.winningResult = null;
     this.state.credits -= this.state.bet;
     this.state.status = "Točíme...";
     this.updateUi();
@@ -182,18 +215,19 @@ export class SlotGame {
     this.randomSpinInterval = window.setInterval(() => {
       const randomGrid = createRandomGrid(DEMO_SYMBOLS);
       this.renderGrid(randomGrid);
-    }, 80);
+    }, 70);
 
     this.spinTimeout = window.setTimeout(() => {
       window.clearInterval(this.randomSpinInterval);
 
-      const finalGrid = createRandomGrid(DEMO_SYMBOLS);
+      const finalGrid = createDemoFinalGrid(DEMO_SYMBOLS, 0.35);
       const winResult = calculateWin(finalGrid, this.state.bet);
 
       this.state.grid = finalGrid;
       this.state.win = winResult.payout;
       this.state.credits += winResult.payout;
       this.state.isSpinning = false;
+      this.state.winningResult = winResult;
 
       this.renderGrid(finalGrid);
 
