@@ -2,6 +2,7 @@ import "./styles/main.css";
 import { createHeader } from "./components/Header.js";
 import { createHeroSection } from "./components/HeroSection.js";
 import { createDemoModal } from "./components/DemoModal.js";
+import { createCodeInfoModal } from "./components/CodeInfoModal.js";
 
 const app = document.querySelector("#app");
 
@@ -11,6 +12,7 @@ pageShell.className = "page-shell";
 const header = createHeader();
 const heroSection = createHeroSection();
 const demoModal = createDemoModal();
+const codeInfoModal = createCodeInfoModal();
 
 const footer = document.createElement("footer");
 footer.className = "page-footer";
@@ -29,10 +31,8 @@ openDemoButton.addEventListener("click", () => {
 });
 
 showCodeButton.addEventListener("click", () => {
-  window.alert(
-    "Sem později napojíme GitHub nebo README projektu. Teď stavíme hlavní UI a demo."
-  );
+  codeInfoModal.open();
 });
 
 pageShell.append(header, heroSection, footer);
-app.append(pageShell, demoModal.element);
+app.append(pageShell, demoModal.element, codeInfoModal.element);

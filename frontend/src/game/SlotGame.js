@@ -46,7 +46,10 @@ export class SlotGame {
     this.rootElement.innerHTML = `
       <div class="slot-game">
         <div class="slot-game__frame">
-          <div class="slot-game__title">✦ CAREAI SLOT ✦</div>
+          <div class="slot-game__top">
+            <div class="slot-game__mode">DEMO REŽIM</div>
+            <div class="slot-game__title">✦ CAREAI SLOT ✦</div>
+        </div>
 
           <div class="slot-game__machine">
             <div class="slot-game__lines slot-game__lines--left">
@@ -105,18 +108,32 @@ export class SlotGame {
     this.elements.bet = this.rootElement.querySelector("[data-bet]");
     this.elements.win = this.rootElement.querySelector("[data-win]");
     this.elements.status = this.rootElement.querySelector("[data-status]");
-    this.elements.spinButton = this.rootElement.querySelector('[data-action="spin"]');
-    this.elements.maxBetButton = this.rootElement.querySelector('[data-action="max-bet"]');
-    this.elements.decreaseBetButton = this.rootElement.querySelector('[data-action="decrease-bet"]');
-    this.elements.increaseBetButton = this.rootElement.querySelector('[data-action="increase-bet"]');
+    this.elements.spinButton = this.rootElement.querySelector(
+      '[data-action="spin"]',
+    );
+    this.elements.maxBetButton = this.rootElement.querySelector(
+      '[data-action="max-bet"]',
+    );
+    this.elements.decreaseBetButton = this.rootElement.querySelector(
+      '[data-action="decrease-bet"]',
+    );
+    this.elements.increaseBetButton = this.rootElement.querySelector(
+      '[data-action="increase-bet"]',
+    );
     this.elements.frame = this.rootElement.querySelector(".slot-game__frame");
   }
 
   bindEvents() {
     this.elements.spinButton.addEventListener("click", () => this.spin());
-    this.elements.maxBetButton.addEventListener("click", () => this.setMaxBet());
-    this.elements.decreaseBetButton.addEventListener("click", () => this.changeBet(-10));
-    this.elements.increaseBetButton.addEventListener("click", () => this.changeBet(10));
+    this.elements.maxBetButton.addEventListener("click", () =>
+      this.setMaxBet(),
+    );
+    this.elements.decreaseBetButton.addEventListener("click", () =>
+      this.changeBet(-10),
+    );
+    this.elements.increaseBetButton.addEventListener("click", () =>
+      this.changeBet(10),
+    );
   }
 
   renderGrid(grid) {
@@ -175,7 +192,7 @@ export class SlotGame {
     this.elements.frame.classList.toggle("is-spinning", this.state.isSpinning);
     this.elements.frame.classList.toggle(
       "has-win",
-      Boolean(this.state.winningResult && this.state.winningResult.payout > 0)
+      Boolean(this.state.winningResult && this.state.winningResult.payout > 0),
     );
   }
 
@@ -220,7 +237,7 @@ export class SlotGame {
     this.spinTimeout = window.setTimeout(() => {
       window.clearInterval(this.randomSpinInterval);
 
-      const finalGrid = createDemoFinalGrid(DEMO_SYMBOLS, 0.35);
+      const finalGrid = createDemoFinalGrid(DEMO_SYMBOLS, 0.28);
       const winResult = calculateWin(finalGrid, this.state.bet);
 
       this.state.grid = finalGrid;
