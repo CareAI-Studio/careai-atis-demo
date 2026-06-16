@@ -2966,3 +2966,915 @@ body::before {
 .slot-game__frame.has-pixi-reels .slot-game__pixi-reels {
   opacity: 1;
 }
+
+/* =========================================================
+   Mobile final override v1.3.8
+   Fixes public mobile layout on atis.careai.cz
+   ========================================================= */
+
+@media (max-width: 720px) {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .page-shell {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .site-header {
+    position: relative;
+  }
+
+  .site-header__inner {
+    width: 100%;
+    max-width: 100%;
+    min-height: auto;
+    padding: 18px 16px 16px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .brand {
+    justify-content: center;
+  }
+
+  .brand__icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 16px;
+  }
+
+  .brand__title {
+    font-size: 1.8rem;
+  }
+
+  .brand__subtitle {
+    font-size: 0.78rem;
+  }
+
+  .site-nav {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .site-nav__link,
+  .site-nav__dropdown-button,
+  .site-nav__theme {
+    min-height: 40px;
+  }
+
+  .site-nav__link--pill {
+    padding: 10px 14px;
+  }
+
+  .site-nav__dropdown-menu {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%) translateY(-6px);
+  }
+
+  .site-nav__dropdown:hover .site-nav__dropdown-menu,
+  .site-nav__dropdown:focus-within .site-nav__dropdown-menu {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .hero-section {
+    width: 100%;
+    max-width: 100%;
+    padding: 28px 16px 42px;
+    overflow-x: hidden;
+  }
+
+  .hero-section__inner {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .hero-preview {
+    order: 2;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .hero-copy {
+    order: 1;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hero-copy__badge {
+    min-height: 38px;
+    padding: 0 14px;
+    font-size: 0.8rem;
+  }
+
+  .hero-copy__title {
+    margin-top: 20px;
+  }
+
+  .hero-copy__title-main,
+  .hero-copy__title-accent {
+    font-size: clamp(3rem, 17vw, 4.3rem);
+  }
+
+  .hero-copy__line {
+    margin: 22px 0 24px;
+  }
+
+  .hero-copy__text {
+    max-width: 100%;
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  .hero-copy__actions {
+    width: 100%;
+    margin-top: 28px;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .btn {
+    width: 100%;
+    min-height: 58px;
+    padding: 0 20px;
+    font-size: 1.05rem;
+  }
+
+  .btn--primary,
+  .btn--secondary {
+    min-width: 0;
+  }
+
+  .tech-stack {
+    width: 100%;
+    gap: 10px;
+  }
+
+  .tech-stack__item {
+    flex: 1 1 calc(50% - 10px);
+    min-width: 0;
+    justify-content: center;
+    padding: 0 10px;
+  }
+
+  .info-card {
+    width: 100%;
+    padding: 20px;
+    flex-direction: column;
+  }
+
+  .preview-slot {
+    width: 100%;
+    max-width: 100%;
+    padding: 18px 10px 16px;
+    border-radius: 26px;
+    overflow: hidden;
+  }
+
+  .preview-slot__title {
+    font-size: clamp(1.7rem, 8.5vw, 2.2rem);
+    margin-bottom: 14px;
+  }
+
+  .preview-slot__board {
+    width: 100%;
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .preview-slot__lines {
+    width: 100%;
+    min-height: 64px;
+    height: auto;
+    flex-direction: row;
+    gap: 8px;
+    border-radius: 18px;
+  }
+
+  .preview-slot__lines span {
+    font-size: 1.8rem;
+  }
+
+  .preview-slot__lines--right {
+    display: none;
+  }
+
+  .preview-slot__reels {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    padding: 10px;
+    border-radius: 22px;
+    overflow: hidden;
+  }
+
+  .preview-slot__reel {
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .preview-slot__symbol {
+    width: 100%;
+    min-width: 0;
+    height: 64px;
+    border-radius: 14px;
+    font-size: 1.55rem;
+  }
+
+  .preview-slot__controls {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .preview-slot__spin {
+    grid-column: 1 / -1;
+    width: 72px;
+    height: 72px;
+    justify-self: center;
+  }
+
+  .preview-slot__panel {
+    min-width: 0;
+    min-height: 72px;
+    padding: 10px;
+  }
+
+  .preview-slot__panel strong {
+    font-size: 1.35rem;
+  }
+
+  .page-footer {
+    width: calc(100% - 24px);
+    margin-bottom: 24px;
+  }
+
+  .page-footer__inner {
+    padding: 14px;
+    text-align: center;
+    line-height: 1.45;
+  }
+}
+
+/* Phone modal / real game layout */
+@media (max-width: 720px) {
+  body.body--locked {
+    overflow: hidden;
+  }
+
+  .demo-modal__panel {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: 10px;
+    border-radius: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .demo-modal__close {
+    top: 16px;
+    right: 16px;
+    width: 50px;
+    height: 50px;
+    font-size: 1.35rem;
+  }
+
+  .slot-game {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .slot-game--premium .slot-game__frame,
+  .slot-game__frame {
+    width: 100%;
+    max-width: 100%;
+    padding: 14px;
+    border-radius: 26px;
+    overflow: hidden;
+  }
+
+  .slot-game__top {
+    margin-bottom: 12px;
+    padding-right: 54px;
+  }
+
+  .slot-game__mode {
+    position: static;
+    width: fit-content;
+    margin: 0 0 10px;
+    min-height: 30px;
+    padding: 0 12px;
+    font-size: 0.68rem;
+  }
+
+  .slot-game--premium .slot-game__title,
+  .slot-game__title {
+    font-size: clamp(2rem, 10vw, 2.8rem);
+    line-height: 1.05;
+    margin-bottom: 0;
+  }
+
+  .slot-game__premium-bar {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .slot-game__premium-brand {
+    order: -1;
+    width: 100%;
+    min-width: 0;
+    min-height: 58px;
+    padding: 8px 18px;
+  }
+
+  .slot-game__premium-crown {
+    top: -23px;
+    font-size: 2rem;
+  }
+
+  .slot-game__premium-name {
+    font-size: clamp(1.9rem, 11vw, 2.7rem);
+  }
+
+  .slot-game--premium .slot-game__info-panel--credits,
+  .slot-game--premium .slot-game__bet-box {
+    width: 100%;
+    min-width: 0;
+    min-height: 66px;
+    justify-self: stretch;
+  }
+
+  .slot-game--premium .slot-game__info-panel strong,
+  .slot-game--premium .slot-game__bet-box strong {
+    font-size: 1.45rem;
+  }
+
+  .slot-game--premium .slot-game__machine,
+  .slot-game__machine {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .slot-game--premium .slot-game__lines,
+  .slot-game__lines {
+    display: none;
+  }
+
+  .slot-game__reels-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 8px;
+    border-radius: 22px;
+    overflow: hidden;
+  }
+
+  .slot-game--premium .slot-game__reels,
+  .slot-game__reels {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0;
+    padding: 8px;
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  .slot-game--premium .slot-game__reel,
+  .slot-game__reel {
+    min-width: 0;
+    padding: 0 3px;
+  }
+
+  .slot-game--premium .slot-game__symbol,
+  .slot-game__symbol {
+    width: 100%;
+    min-width: 0;
+    height: 72px;
+    border-radius: 12px;
+    font-size: 1.55rem;
+  }
+
+  .slot-game--premium .slot-game__reel--spinning,
+  .slot-game__reel--spinning {
+    height: 216px;
+    min-width: 0;
+    padding: 0 3px;
+  }
+
+  .slot-game--premium .slot-game__reel-strip .slot-game__symbol,
+  .slot-game__reel-strip .slot-game__symbol {
+    height: 72px;
+  }
+
+  .slot-game__side-arrow {
+    display: none;
+  }
+
+  .slot-game__pixi-reels {
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    border-radius: 18px;
+  }
+
+  .slot-game__premium-controls,
+  .slot-game__controls {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .slot-game__feature-btn,
+  .slot-game--premium .slot-game__max-btn,
+  .slot-game--premium .slot-game__info-panel--win,
+  .slot-game__info-panel,
+  .slot-game__bet-box,
+  .slot-game__max-btn {
+    min-width: 0;
+    min-height: 58px;
+    border-radius: 16px;
+    font-size: 0.9rem;
+  }
+
+  .slot-game--premium .slot-game__spin-btn,
+  .slot-game__spin-btn {
+    grid-column: 1 / -1;
+    width: 104px;
+    height: 104px;
+    justify-self: center;
+    border-width: 3px;
+  }
+
+  .slot-game__spin-text {
+    font-size: 1.55rem;
+  }
+
+  .slot-game--premium .slot-game__info-panel--win strong,
+  .slot-game__info-panel--win strong {
+    font-size: 1.45rem;
+  }
+
+  .slot-game__status {
+    min-height: 54px;
+    margin-top: 14px;
+    padding: 12px;
+    border-radius: 16px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 390px) {
+  .hero-section {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .site-header__inner {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .brand__title {
+    font-size: 1.65rem;
+  }
+
+  .site-nav {
+    gap: 8px;
+  }
+
+  .site-nav__link,
+  .site-nav__dropdown-button {
+    font-size: 0.9rem;
+  }
+
+  .preview-slot__symbol {
+    height: 58px;
+    font-size: 1.35rem;
+  }
+
+  .slot-game--premium .slot-game__symbol,
+  .slot-game__symbol {
+    height: 64px;
+    font-size: 1.35rem;
+  }
+
+  .slot-game--premium .slot-game__reel--spinning,
+  .slot-game__reel--spinning {
+    height: 192px;
+  }
+
+  .slot-game--premium .slot-game__reel-strip .slot-game__symbol,
+  .slot-game__reel-strip .slot-game__symbol {
+    height: 64px;
+  }
+
+  .slot-game--premium .slot-game__spin-btn,
+  .slot-game__spin-btn {
+    width: 94px;
+    height: 94px;
+  }
+}
+
+/* Landscape phone modal */
+@media (max-width: 900px) and (orientation: landscape) {
+  .demo-modal__panel {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: 10px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .slot-game--premium .slot-game__frame,
+  .slot-game__frame {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .slot-game__premium-bar {
+    grid-template-columns: 1fr 1.2fr 1fr;
+  }
+
+  .slot-game__premium-controls,
+  .slot-game__controls {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .slot-game--premium .slot-game__spin-btn,
+  .slot-game__spin-btn {
+    grid-column: auto;
+    width: 86px;
+    height: 86px;
+  }
+}
+
+/* =========================================================
+   Mobile modal compact polish v1.3.9
+   Makes the real demo feel like a phone app screen.
+   ========================================================= */
+
+@media (max-width: 720px) {
+  .demo-modal__panel {
+    padding: 8px;
+  }
+
+  .slot-game--premium .slot-game__frame,
+  .slot-game__frame {
+    padding: 12px;
+    border-radius: 24px;
+  }
+
+  .slot-game__top {
+    margin-bottom: 8px;
+    padding-right: 54px;
+  }
+
+  .slot-game__mode {
+    min-height: 28px;
+    margin-bottom: 6px;
+    padding: 0 10px;
+    font-size: 0.62rem;
+  }
+
+  .slot-game--premium .slot-game__title,
+  .slot-game__title {
+    font-size: clamp(1.55rem, 8.2vw, 2.15rem);
+    line-height: 1.02;
+    letter-spacing: 0.035em;
+  }
+
+  .slot-game__title::after {
+    margin-top: 8px;
+  }
+
+  .demo-modal__close {
+    top: 14px;
+    right: 14px;
+    width: 44px;
+    height: 44px;
+    font-size: 1.15rem;
+  }
+
+  .slot-game__premium-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 12px 0 12px;
+  }
+
+  .slot-game__premium-brand {
+    grid-column: 1 / -1;
+    min-height: 48px;
+    padding: 6px 14px;
+    border-radius: 18px;
+  }
+
+  .slot-game__premium-crown {
+    top: -18px;
+    font-size: 1.65rem;
+  }
+
+  .slot-game__premium-name {
+    font-size: clamp(1.45rem, 8vw, 2.05rem);
+    letter-spacing: 0.055em;
+  }
+
+  .slot-game--premium .slot-game__info-panel--credits,
+  .slot-game--premium .slot-game__bet-box {
+    min-height: 54px;
+    border-radius: 14px;
+  }
+
+  .slot-game__info-label,
+  .slot-game__label,
+  .slot-game--premium .slot-game__info-label {
+    font-size: 0.68rem;
+  }
+
+  .slot-game--premium .slot-game__info-panel strong,
+  .slot-game--premium .slot-game__bet-box strong {
+    margin-top: 3px;
+    font-size: 1.25rem;
+  }
+
+  .slot-game__bet-controls {
+    gap: 8px;
+    margin-top: 2px;
+  }
+
+  .slot-game__small-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 1.15rem;
+  }
+
+  .slot-game__reels-wrap {
+    padding: 7px;
+    border-radius: 20px;
+  }
+
+  .slot-game--premium .slot-game__reels,
+  .slot-game__reels {
+    padding: 7px;
+    border-radius: 16px;
+  }
+
+  .slot-game--premium .slot-game__reel,
+  .slot-game__reel {
+    padding: 0 2px;
+  }
+
+  .slot-game--premium .slot-game__symbol,
+  .slot-game__symbol {
+    height: 58px;
+    border-radius: 10px;
+    font-size: 1.25rem;
+  }
+
+  .slot-game--premium .slot-game__reel--spinning,
+  .slot-game__reel--spinning {
+    height: 174px;
+  }
+
+  .slot-game--premium .slot-game__reel-strip .slot-game__symbol,
+  .slot-game__reel-strip .slot-game__symbol {
+    height: 58px;
+  }
+
+  .slot-game__pixi-reels {
+    top: 7px;
+    right: 7px;
+    bottom: 7px;
+    left: 7px;
+    border-radius: 16px;
+  }
+
+  .slot-game__premium-controls,
+  .slot-game__controls {
+    grid-template-columns: 1fr 86px 1fr;
+    gap: 8px;
+    margin-top: 12px;
+    align-items: center;
+  }
+
+  .slot-game__feature-btn {
+    min-height: 48px;
+    border-radius: 14px;
+    font-size: 0.78rem;
+  }
+
+  .slot-game__feature-btn:first-child {
+    grid-column: 1;
+  }
+
+  .slot-game__feature-btn:nth-child(2) {
+    grid-column: 3;
+  }
+
+  .slot-game--premium .slot-game__spin-btn,
+  .slot-game__spin-btn {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    width: 78px;
+    height: 78px;
+    border-width: 3px;
+  }
+
+  .slot-game__spin-text {
+    font-size: 1.25rem;
+  }
+
+  .slot-game--premium .slot-game__max-btn,
+  .slot-game--premium .slot-game__info-panel--win {
+    min-height: 48px;
+    border-radius: 14px;
+    font-size: 0.78rem;
+  }
+
+  .slot-game--premium .slot-game__max-btn {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .slot-game--premium .slot-game__info-panel--win {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  .slot-game--premium .slot-game__info-panel--win strong,
+  .slot-game__info-panel--win strong {
+    margin-top: 2px;
+    font-size: 1.15rem;
+  }
+
+  .slot-game__status {
+    min-height: 44px;
+    margin-top: 10px;
+    padding: 9px 10px;
+    border-radius: 14px;
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+}
+
+/* Samsung / narrow phone extra compression */
+@media (max-width: 390px) {
+  .slot-game--premium .slot-game__frame,
+  .slot-game__frame {
+    padding: 10px;
+  }
+
+  .slot-game--premium .slot-game__title,
+  .slot-game__title {
+    font-size: clamp(1.45rem, 8vw, 1.95rem);
+  }
+
+  .slot-game__premium-bar {
+    gap: 7px;
+    margin: 10px 0;
+  }
+
+  .slot-game__premium-brand {
+    min-height: 44px;
+  }
+
+  .slot-game__premium-name {
+    font-size: 1.45rem;
+  }
+
+  .slot-game--premium .slot-game__symbol,
+  .slot-game__symbol {
+    height: 54px;
+    font-size: 1.15rem;
+  }
+
+  .slot-game--premium .slot-game__reel--spinning,
+  .slot-game__reel--spinning {
+    height: 162px;
+  }
+
+  .slot-game--premium .slot-game__reel-strip .slot-game__symbol,
+  .slot-game__reel-strip .slot-game__symbol {
+    height: 54px;
+  }
+
+  .slot-game__premium-controls,
+  .slot-game__controls {
+    grid-template-columns: 1fr 76px 1fr;
+  }
+
+  .slot-game--premium .slot-game__spin-btn,
+  .slot-game__spin-btn {
+    width: 72px;
+    height: 72px;
+  }
+}
+
+/* Landscape phone: show compact desktop-like layout without massive vertical crop */
+@media (max-width: 900px) and (orientation: landscape) {
+  .slot-game--premium .slot-game__frame,
+  .slot-game__frame {
+    max-width: 720px;
+    padding: 10px;
+  }
+
+  .slot-game__top {
+    margin-bottom: 6px;
+  }
+
+  .slot-game--premium .slot-game__title,
+  .slot-game__title {
+    font-size: 1.7rem;
+  }
+
+  .slot-game__premium-bar {
+    grid-template-columns: 1fr 1.1fr 1fr;
+    gap: 8px;
+    margin: 8px 0;
+  }
+
+  .slot-game__premium-brand {
+    grid-column: auto;
+    min-height: 46px;
+  }
+
+  .slot-game__premium-name {
+    font-size: 1.45rem;
+  }
+
+  .slot-game--premium .slot-game__info-panel--credits,
+  .slot-game--premium .slot-game__bet-box {
+    min-height: 46px;
+  }
+
+  .slot-game--premium .slot-game__symbol,
+  .slot-game__symbol {
+    height: 50px;
+    font-size: 1.1rem;
+  }
+
+  .slot-game--premium .slot-game__reel--spinning,
+  .slot-game__reel--spinning {
+    height: 150px;
+  }
+
+  .slot-game--premium .slot-game__reel-strip .slot-game__symbol,
+  .slot-game__reel-strip .slot-game__symbol {
+    height: 50px;
+  }
+
+  .slot-game__premium-controls,
+  .slot-game__controls {
+    grid-template-columns: 1fr 1fr 76px 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .slot-game--premium .slot-game__spin-btn,
+  .slot-game__spin-btn {
+    grid-column: auto;
+    grid-row: auto;
+    width: 68px;
+    height: 68px;
+  }
+
+  .slot-game__status {
+    min-height: 38px;
+    margin-top: 8px;
+    padding: 7px 10px;
+  }
+}
