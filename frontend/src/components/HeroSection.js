@@ -1,6 +1,7 @@
 export function createHeroSection() {
   const section = document.createElement("main");
   section.className = "hero-section";
+  section.id = "atis-demo";
 
   section.innerHTML = `
     <div class="hero-section__inner">
@@ -33,10 +34,25 @@ export function createHeroSection() {
         </div>
 
         <div class="tech-stack">
-          <div class="tech-stack__item"><span class="tech-stack__tag tech-stack__tag--js">JS</span>JavaScript</div>
-          <div class="tech-stack__item"><span class="tech-stack__tag tech-stack__tag--pixi">PXI</span>PixiJS</div>
-          <div class="tech-stack__item"><span class="tech-stack__tag tech-stack__tag--gsap">⚡</span>GSAP</div>
-          <div class="tech-stack__item"><span class="tech-stack__tag tech-stack__tag--pack">⬢</span>Webpack/Vite</div>
+          <div class="tech-stack__item">
+            <span class="tech-stack__tag tech-stack__tag--js">JS</span>
+            JavaScript
+          </div>
+
+          <div class="tech-stack__item">
+            <span class="tech-stack__tag tech-stack__tag--pixi">PXI</span>
+            PixiJS
+          </div>
+
+          <div class="tech-stack__item">
+            <span class="tech-stack__tag tech-stack__tag--pack">⚡</span>
+            Vite
+          </div>
+
+          <div class="tech-stack__item">
+            <span class="tech-stack__tag tech-stack__tag--node">API</span>
+            Node.js API
+          </div>
         </div>
 
         <div class="info-card">
@@ -67,21 +83,25 @@ export function createHeroSection() {
                 <div class="preview-slot__symbol symbol--chat">💬</div>
                 <div class="preview-slot__symbol symbol--star">★</div>
               </div>
+
               <div class="preview-slot__reel">
                 <div class="preview-slot__symbol symbol--heart">♥</div>
                 <div class="preview-slot__symbol symbol--ai">AI</div>
                 <div class="preview-slot__symbol symbol--diamond">◆</div>
               </div>
+
               <div class="preview-slot__reel">
                 <div class="preview-slot__symbol symbol--star">★</div>
                 <div class="preview-slot__symbol symbol--ai">AI</div>
                 <div class="preview-slot__symbol symbol--bolt">⚡</div>
               </div>
+
               <div class="preview-slot__reel">
                 <div class="preview-slot__symbol symbol--chat">💬</div>
                 <div class="preview-slot__symbol symbol--robot">🤖</div>
                 <div class="preview-slot__symbol symbol--heart">♥</div>
               </div>
+
               <div class="preview-slot__reel">
                 <div class="preview-slot__symbol symbol--ai">AI</div>
                 <div class="preview-slot__symbol symbol--star">★</div>
