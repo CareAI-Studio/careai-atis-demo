@@ -11,10 +11,13 @@ Demo je postavené tak, aby šlo jednoduše spustit lokálně, ukázat u pohovor
 * responzivní frontend layout
 * hlavní prezentační stránku
 * modal s herním automatem
-* jednoduchou herní logiku
-* kredity, sázku, výhru a spin
-* výpočet výhry na prostřední linii
-* zvýraznění výherní linie
+* herní stav: kredity, sázka, výhra a spin
+* AUTO režim pro automatické spiny
+* TURBO režim pro rychlejší spin a rychlejší zastavení válců
+* 25 výherních linií
+* výpočet výhry přes payline systém
+* zvýraznění výherních symbolů podle konkrétní vítězné linie
+* non-paying / blank symboly pro vyvážení četnosti výher
 * DOM reel strip animaci válců
 * postupné zastavení válců zleva doprava
 * oddělení UI od herní logiky
@@ -63,6 +66,7 @@ careai-atis-demo/
 │  │  │  ├─ gameConfig.js
 │  │  │  └─ logic/
 │  │  │     ├─ createRandomGrid.js
+│  │  │     ├─ paylines.js
 │  │  │     ├─ winCalculator.js
 │  │  │     └─ formatNumber.js
 │  │  ├─ styles/
@@ -162,9 +166,57 @@ Ukázkové tělo požadavku:
 }
 ```
 
-Backend vrací výslednou mřížku symbolů, výherní výsledek, výherní symbol, počet symbolů v linii a čas odpovědi.
+Backend vrací:
+
+* výslednou mřížku symbolů
+* výherní výsledek
+* výherní symbol
+* počet stejných symbolů zleva
+* vítěznou linii
+* vítězné pozice v gridu
+* seznam všech výherních linií
+* počet aktivních linií
+* čas odpovědi
 
 Frontend během spinu volá backend API. Pokud backend není dostupný, frontend zachytí chybu a automaticky použije lokální fallback výpočet, aby demo zůstalo funkční i bez spuštěného backendu.
+
+## Herní mechaniky
+
+### Spin
+
+Hráč spustí spin tlačítkem `SPIN`. Z kreditů se odečte aktuální sázka, frontend zavolá backend API a během čekání spustí animaci válců.
+
+Po dokončení spinu se zobrazí finální výsledek, aktualizují se kredity a případně se zvýrazní výherní symboly.
+
+### AUTO režim
+
+Tlačítko `AUTO` funguje jako přepínač. Pokud je zapnuté, hra po dokončení jednoho spinu automaticky spustí další spin.
+
+AUTO režim se vypne:
+
+* dalším kliknutím na AUTO
+* při nedostatku kreditů
+* při ručním spuštění spinu
+
+### TURBO režim
+
+Tlačítko `TURBO` funguje jako přepínač. Pokud je zapnuté, spin a zastavování válců běží rychleji.
+
+TURBO režim je čistě frontendová herní/UX mechanika. Nemění výsledek hry, pouze rychlost animace a čekání na dokončení spinu.
+
+### 25 LINES
+
+Demo obsahuje systém 25 výherních linií. Výhra se nepočítá jen na prostřední řadě, ale přes připravené payline patterny.
+
+Každá linie definuje, kterou řadu má v jednotlivých válcích sledovat. Výpočet zkontroluje všechny linie a vyhodnotí výherní kombinace zleva doprava.
+
+Pokud padne více výherních linií najednou, celková výhra se sečte.
+
+### Blank symboly
+
+Kvůli 25 aktivním liniím by čistě náhodný grid dával výhry příliš často. Proto demo obsahuje i non-paying / blank symboly, které snižují četnost výher a dělají demo uvěřitelnější.
+
+Blank symbol nemá výplatní hodnotu a nepočítá se jako výherní symbol.
 
 ## Animace válců
 
@@ -172,9 +224,9 @@ Aktuální verze obsahuje DOM animaci válců bez použití PixiJS.
 
 Při spinu se ve frontendu nejdřív spustí samostatná animační vrstva. Každý sloupec se během točení vykreslí jako svislý pás symbolů, který se pohybuje nahoru. Výsledek ze serveru se nepoužije hned vizuálně, ale až při postupném zastavování válců.
 
-Zastavení probíhá po jednotlivých sloupcích zleva doprava. Po dokončení animace se zobrazí finální výsledek, aktualizují se kredity a případně se zvýrazní výherní symboly na prostřední linii.
+Zastavení probíhá po jednotlivých sloupcích zleva doprava. Po dokončení animace se zobrazí finální výsledek, aktualizují se kredity a případně se zvýrazní výherní symboly podle vítězné linie.
 
-Tato část je záměrně řešená zatím přes HTML/CSS/JavaScript, aby bylo možné rychle vytvořit funkční prototyp. Další přirozený krok je převést vykreslení válců na PixiJS canvas.
+Tato část je záměrně řešená zatím přes HTML/CSS/JavaScript, aby bylo možné rychle vytvořit funkční prototyp. Další přirozený krok je převést vykreslení válců a efektů na PixiJS canvas.
 
 ## Aktuální stav
 
@@ -183,10 +235,15 @@ Aktuální verze obsahuje:
 * hotovou homepage
 * funkční tlačítko „Spustit demo“
 * modal s automatem
+* premium slot layout
 * funkční spin
 * kredity, sázku a výhru
-* demo výherní režim
-* zvýraznění výherních symbolů
+* funkční AUTO režim
+* funkční TURBO režim
+* 25 výherních linií
+* výpočty výher na různých liniích
+* zvýraznění výherních symbolů podle vítězné linie
+* blank symboly pro vyvážení výher
 * postupné zastavování válců
 * plynulejší reel strip animaci
 * panel „Zobrazit kód“ s vysvětlením architektury
@@ -206,17 +263,23 @@ Aktuální verze obsahuje:
 * `0.8` – README a prezentační panel odpovídají backend integraci
 * `1.0` – stabilní demo verze s frontendem, backendem a fallbackem
 * `1.1.1` – reel strip animace válců a postupné zastavování sloupců
+* `1.1.3` – premium slot layout
+* `1.1.4` – premium layout cleanup / hotové DOM-CSS premium demo
+* `1.1.5` – AUTO režim a TURBO režim
+* `1.1.6` – 25 payline win system a vyvážení výher pomocí blank symbolů
 
 ## Další plán
 
 Další možné kroky:
 
-* převést vykreslení válců na PixiJS canvas
-* přidat jemnější easing při zastavování jednotlivých válců
+* přidat PixiJS canvas jako efektovou vrstvu
+* přidat PixiJS glow efekty kolem válců
 * přidat particle efekty při výhře
+* postupně převést vykreslení válců na PixiJS canvas
+* přidat jemnější easing při zastavování jednotlivých válců
 * přidat zvukové efekty
 * přidat krátký win efekt pro vyšší výhry
-* připravit jednoduché nasazení na careai.cz
+* připravit jednoduché nasazení na careai.cz / KAI.cz
 * přidat odkaz na GitHub do panelu „Zobrazit kód“
 * doplnit produkční konfiguraci pro frontend a backend
 
@@ -226,8 +289,12 @@ Nejdřív jsem vytvořil jednoduchý frontendový prototyp slot hry ve Vite. Pot
 
 Frontend zároveň obsahuje fallback, takže když backend neběží, hra se nezastaví a použije lokální výpočet. V další fázi jsem zlepšil animaci válců tak, že během spinu nevykresluji jen statické symboly, ale samostatný svislý reel strip, který se postupně zastavuje po sloupcích.
 
+Potom jsem doplnil herní režimy AUTO a TURBO a rozšířil výpočet výher z jedné prostřední linie na 25 payline systém. Demo tak ukazuje nejen UI a animaci, ale i základní herní mechaniky, stav aplikace, backend komunikaci a připravenost na další rozšiřování.
+
 Projekt zatím běží přes DOM/CSS/JavaScript, ale struktura je připravená na další krok: převést samotné vykreslení válců a efektů na PixiJS.
 
 ## Poznámka
 
 Projekt vzniká jako portfolio ukázka. Důraz je kladený na přemýšlení nad strukturou, rozdělení odpovědností v kódu, schopnost rychle vytvořit funkční frontendový prototyp a připravit ho na backendové rozšíření.
+
+Výherní pravděpodobnost a výplatní poměry jsou nastavené pro demo režim tak, aby bylo během krátké prezentace dobře vidět, že spin, paylines, zvýraznění výher, AUTO, TURBO a backend komunikace fungují.
