@@ -69,6 +69,22 @@ export class SlotGame {
     window.careAiPixiWin = playPixiWinEffect;
   }
 
+  playWinFeedback() {
+    playPixiWinEffect();
+
+    if (!this.elements.frame) return;
+
+    this.elements.frame.classList.remove("is-win-impact");
+
+    window.requestAnimationFrame(() => {
+      this.elements.frame.classList.add("is-win-impact");
+    });
+
+    window.setTimeout(() => {
+      this.elements.frame.classList.remove("is-win-impact");
+    }, 460);
+  }
+
   renderShell() {
     this.rootElement.innerHTML = `
       <div class="slot-game slot-game--premium">
@@ -288,7 +304,9 @@ export class SlotGame {
     stripElement.className = "slot-game__reel-strip";
 
     const baseSpeed = this.state.isTurbo ? 0.34 : 0.62;
-    const reelOffset = this.state.isTurbo ? reelIndex * 0.035 : reelIndex * 0.08;
+    const reelOffset = this.state.isTurbo
+      ? reelIndex * 0.035
+      : reelIndex * 0.08;
 
     stripElement.style.setProperty(
       "--strip-speed",
@@ -408,7 +426,8 @@ export class SlotGame {
         return;
       }
 
-      this.state.status = "AUTO režim zapnutý. Automat bude spouštět další spiny.";
+      this.state.status =
+        "AUTO režim zapnutý. Automat bude spouštět další spiny.";
       this.updateUi();
 
       if (!this.state.isSpinning) {
@@ -620,7 +639,7 @@ export class SlotGame {
     if (winResult.payout > 0) {
       const winningLinesText = this.getWinningLinesText(winResult);
 
-      playPixiWinEffect();
+      this.playWinFeedback();
 
       this.state.status = `Výhra ${formatNumber(winResult.payout)} kreditů. Symbol ${winResult.winningSymbol.label} × ${winResult.winningStreak} na ${winningLinesText}. Výsledek připravilo ${resultSourceLabel}.`;
     } else {

@@ -2513,3 +2513,78 @@ body::before {
   position: relative;
   z-index: 2;
 }
+
+/* ================================
+   PixiJS win polish
+   v1.2.1
+================================ */
+
+.slot-game__frame.is-win-impact {
+  animation: slotWinImpactShake 420ms ease-out;
+}
+
+.slot-game__frame.has-win .slot-game__reels-wrap {
+  animation: slotWinReelsPulse 900ms ease-out;
+}
+
+.slot-game__frame.has-win .slot-game__premium-brand {
+  animation: slotWinBrandGlow 900ms ease-out;
+}
+
+@keyframes slotWinImpactShake {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  16% {
+    transform: translate3d(-3px, 1px, 0);
+  }
+
+  32% {
+    transform: translate3d(3px, -1px, 0);
+  }
+
+  48% {
+    transform: translate3d(-2px, 1px, 0);
+  }
+
+  64% {
+    transform: translate3d(2px, 0, 0);
+  }
+
+  80% {
+    transform: translate3d(-1px, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes slotWinReelsPulse {
+  0% {
+    filter: brightness(1);
+  }
+
+  35% {
+    filter: brightness(1.28) saturate(1.25);
+  }
+
+  100% {
+    filter: brightness(1);
+  }
+}
+
+@keyframes slotWinBrandGlow {
+  0% {
+    filter: brightness(1);
+  }
+
+  35% {
+    filter: brightness(1.35) drop-shadow(0 0 18px rgba(255, 215, 106, 0.85));
+  }
+
+  100% {
+    filter: brightness(1);
+  }
+}

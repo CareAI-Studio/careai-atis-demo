@@ -4,12 +4,16 @@ let pixiApp = null;
 let rootLayer = null;
 let particlesLayer = null;
 let glowLayer = null;
+let flashLayer = null;
 let winLayer = null;
 let resizeObserver = null;
 let rafReady = false;
 
 const particles = [];
 const winBursts = [];
+const winSparks = [];
+
+let flashAlpha = 0;
 
 function getRandom(min, max) {
   return Math.random() * (max - min) + min;
@@ -18,8 +22,8 @@ function getRandom(min, max) {
 function createParticle(width, height) {
   const particle = new Graphics();
 
-  const radius = getRandom(1.2, 3.2);
-  const alpha = getRandom(0.18, 0.55);
+  const radius = getRandom(1.1, 3.1);
+  const alpha = getRandom(0.14, 0.46);
 
   particle.circle(0, 0, radius);
   particle.fill({ color: 0xffffff, alpha });
@@ -27,7 +31,7 @@ function createParticle(width, height) {
   particle.x = getRandom(0, width);
   particle.y = getRandom(0, height);
   particle.vx = getRandom(-0.18, 0.18);
-  particle.vy = getRandom(-0.35, -0.08);
+  particle.vy = getRandom(-0.34, -0.08);
   particle.baseAlpha = alpha;
   particle.lifeOffset = getRandom(0, Math.PI * 2);
 
@@ -43,6 +47,7 @@ function resizePixiCanvas(container) {
 
   pixiApp.renderer.resize(width, height);
   drawAmbientGlow(width, height);
+  drawFlash(width, height);
 }
 
 function drawAmbientGlow(width, height) {
@@ -63,12 +68,32 @@ function drawAmbientGlow(width, height) {
     .fill({ color: 0x9f5cff, alpha: 0.045 });
 }
 
+function drawFlash(width, height) {
+  if (!flashLayer) return;
+
+  flashLayer.clear();
+
+  if (flashAlpha <= 0) return;
+
+  flashLayer
+    .rect(0, 0, width, height)
+    .fill({ color: 0xffffff, alpha: flashAlpha * 0.12 });
+
+  flashLayer
+    .ellipse(width * 0.5, height * 0.48, width * 0.4, height * 0.18)
+    .fill({ color: 0xffd76a, alpha: flashAlpha * 0.18 });
+
+  flashLayer
+    .ellipse(width * 0.5, height * 0.48, width * 0.58, height * 0.28)
+    .stroke({ width: 3, color: 0xffd76a, alpha: flashAlpha * 0.45 });
+}
+
 function createWinBurst(width, height) {
   const burst = new Graphics();
 
   burst.x = width * 0.5;
-  burst.y = height * 0.5;
-  burst.scale.set(0.2);
+  burst.y = height * 0.48;
+  burst.scale.set(0.22);
   burst.alpha = 0.95;
   burst.life = 0;
 
@@ -77,29 +102,54 @@ function createWinBurst(width, height) {
     .stroke({ width: 4, color: 0xffffff, alpha: 0.85 });
 
   burst
-    .circle(0, 0, 74)
-    .stroke({ width: 2, color: 0x62d6ff, alpha: 0.55 });
+    .circle(0, 0, 78)
+    .stroke({ width: 2, color: 0xffd76a, alpha: 0.7 });
+
+  burst
+    .circle(0, 0, 118)
+    .stroke({ width: 2, color: 0x62d6ff, alpha: 0.42 });
 
   return burst;
 }
 
-function spawnWinSpark(width, height) {
+function createWinSpark(width, height) {
   const spark = new Graphics();
 
-  const size = getRandom(2, 5);
+  const size = getRandom(2, 5.5);
   const angle = getRandom(0, Math.PI * 2);
-  const speed = getRandom(1.4, 4.2);
+  const speed = getRandom(1.8, 5.2);
+  const color = Math.random() > 0.45 ? 0xffd76a : 0xffffff;
 
   spark.circle(0, 0, size);
-  spark.fill({ color: 0xffffff, alpha: 0.95 });
+  spark.fill({ color, alpha: 0.95 });
 
-  spark.x = width * 0.5;
-  spark.y = height * 0.5;
+  spark.x = width * 0.5 + getRandom(-70, 70);
+  spark.y = height * 0.48 + getRandom(-25, 25);
   spark.vx = Math.cos(angle) * speed;
   spark.vy = Math.sin(angle) * speed;
   spark.life = 0;
-  spark.maxLife = getRandom(26, 48);
-  spark.isWinSpark = true;
+  spark.maxLife = getRandom(32, 58);
+  spark.rotationSpeed = getRandom(-0.08, 0.08);
+
+  return spark;
+}
+
+function createLineSpark(width, height) {
+  const spark = new Graphics();
+
+  const size = getRandom(1.6, 4.2);
+  const direction = Math.random() > 0.5 ? 1 : -1;
+
+  spark.circle(0, 0, size);
+  spark.fill({ color: 0xfff0a8, alpha: 0.92 });
+
+  spark.x = width * 0.5 + getRandom(-width * 0.25, width * 0.25);
+  spark.y = height * 0.48 + getRandom(-12, 12);
+  spark.vx = direction * getRandom(2.4, 5.8);
+  spark.vy = getRandom(-0.7, 0.7);
+  spark.life = 0;
+  spark.maxLife = getRandom(24, 42);
+  spark.rotationSpeed = getRandom(-0.12, 0.12);
 
   return spark;
 }
@@ -133,6 +183,15 @@ function updateParticles(deltaTime) {
   }
 }
 
+function updateFlash(deltaTime) {
+  if (!pixiApp || !flashLayer) return;
+
+  if (flashAlpha > 0) {
+    flashAlpha = Math.max(0, flashAlpha - 0.035 * deltaTime);
+    drawFlash(pixiApp.renderer.width, pixiApp.renderer.height);
+  }
+}
+
 function updateWinBursts(deltaTime) {
   if (!winLayer) return;
 
@@ -140,9 +199,9 @@ function updateWinBursts(deltaTime) {
     const burst = winBursts[index];
 
     burst.life += deltaTime;
-    burst.scale.x += 0.025 * deltaTime;
-    burst.scale.y += 0.025 * deltaTime;
-    burst.alpha -= 0.018 * deltaTime;
+    burst.scale.x += 0.028 * deltaTime;
+    burst.scale.y += 0.028 * deltaTime;
+    burst.alpha -= 0.016 * deltaTime;
 
     if (burst.alpha <= 0) {
       winLayer.removeChild(burst);
@@ -150,21 +209,25 @@ function updateWinBursts(deltaTime) {
       winBursts.splice(index, 1);
     }
   }
+}
 
-  for (let index = winLayer.children.length - 1; index >= 0; index -= 1) {
-    const child = winLayer.children[index];
+function updateWinSparks(deltaTime) {
+  if (!winLayer) return;
 
-    if (!child.isWinSpark) continue;
+  for (let index = winSparks.length - 1; index >= 0; index -= 1) {
+    const spark = winSparks[index];
 
-    child.life += deltaTime;
-    child.x += child.vx * deltaTime;
-    child.y += child.vy * deltaTime;
-    child.vy += 0.045 * deltaTime;
-    child.alpha = 1 - child.life / child.maxLife;
+    spark.life += deltaTime;
+    spark.x += spark.vx * deltaTime;
+    spark.y += spark.vy * deltaTime;
+    spark.vy += 0.035 * deltaTime;
+    spark.rotation += spark.rotationSpeed * deltaTime;
+    spark.alpha = Math.max(0, 1 - spark.life / spark.maxLife);
 
-    if (child.life >= child.maxLife) {
-      winLayer.removeChild(child);
-      child.destroy();
+    if (spark.life >= spark.maxLife) {
+      winLayer.removeChild(spark);
+      spark.destroy();
+      winSparks.splice(index, 1);
     }
   }
 }
@@ -172,7 +235,7 @@ function updateWinBursts(deltaTime) {
 export async function initPixiEffects(options = {}) {
   const {
     containerSelector = "[data-pixi-effects-layer]",
-    particleCount = 42,
+    particleCount = 46,
   } = options;
 
   const container = document.querySelector(containerSelector);
@@ -205,10 +268,12 @@ export async function initPixiEffects(options = {}) {
   rootLayer = new Container();
   glowLayer = new Graphics();
   particlesLayer = new Container();
+  flashLayer = new Graphics();
   winLayer = new Container();
 
   rootLayer.addChild(glowLayer);
   rootLayer.addChild(particlesLayer);
+  rootLayer.addChild(flashLayer);
   rootLayer.addChild(winLayer);
 
   pixiApp.stage.addChild(rootLayer);
@@ -233,7 +298,9 @@ export async function initPixiEffects(options = {}) {
   if (!rafReady) {
     pixiApp.ticker.add((ticker) => {
       updateParticles(ticker.deltaTime);
+      updateFlash(ticker.deltaTime);
       updateWinBursts(ticker.deltaTime);
+      updateWinSparks(ticker.deltaTime);
     });
 
     rafReady = true;
@@ -250,12 +317,22 @@ export function playPixiWinEffect() {
   const width = pixiApp.renderer.width;
   const height = pixiApp.renderer.height;
 
+  flashAlpha = 1;
+
   const burst = createWinBurst(width, height);
   winBursts.push(burst);
   winLayer.addChild(burst);
 
-  for (let index = 0; index < 26; index += 1) {
-    winLayer.addChild(spawnWinSpark(width, height));
+  for (let index = 0; index < 32; index += 1) {
+    const spark = createWinSpark(width, height);
+    winSparks.push(spark);
+    winLayer.addChild(spark);
+  }
+
+  for (let index = 0; index < 18; index += 1) {
+    const spark = createLineSpark(width, height);
+    winSparks.push(spark);
+    winLayer.addChild(spark);
   }
 }
 
@@ -267,6 +344,8 @@ export function destroyPixiEffects() {
 
   particles.length = 0;
   winBursts.length = 0;
+  winSparks.length = 0;
+  flashAlpha = 0;
 
   if (pixiApp) {
     pixiApp.destroy(true, {
@@ -280,6 +359,7 @@ export function destroyPixiEffects() {
   rootLayer = null;
   particlesLayer = null;
   glowLayer = null;
+  flashLayer = null;
   winLayer = null;
   rafReady = false;
 }
