@@ -2,9 +2,9 @@
 
 Portfolio projekt vytvořený jako ukázka pro pozici **Frontend Game Developer / PixiJS Developer**.
 
-Projekt představuje jednoduchý interaktivní herní prototyp ve stylu slot hry. Cílem není vytvořit reálnou hazardní hru, ale ukázat práci s frontendovým UI, herní logikou, animací, stavem aplikace, komunikací s backendem, základní integrací PixiJS a čistou strukturou projektu.
+Projekt představuje jednoduchý interaktivní herní prototyp ve stylu slot hry. Cílem není vytvořit reálnou hazardní hru, ale ukázat práci s frontendovým UI, herní logikou, animací, stavem aplikace, komunikací s backendem, základní integrací PixiJS, postupným canvas refaktorem a čistou strukturou projektu.
 
-Demo je postavené tak, aby šlo jednoduše spustit lokálně, ukázat u pohovoru a dál rozšiřovat například přes PixiJS canvas, GSAP animace, zvukové efekty nebo pokročilejší backendovou logiku.
+Demo je postavené tak, aby šlo jednoduše spustit lokálně, ukázat u pohovoru a dál rozšiřovat například přes PixiJS canvas, GSAP animace, zvukové efekty, asset-based symboly nebo pokročilejší backendovou logiku.
 
 ## Co demo ukazuje
 
@@ -18,15 +18,21 @@ Demo je postavené tak, aby šlo jednoduše spustit lokálně, ukázat u pohovor
 * výpočet výhry přes payline systém
 * zvýraznění výherních symbolů podle konkrétní vítězné linie
 * non-paying / blank symboly pro vyvážení četnosti výher
-* DOM reel strip animaci válců
+* DOM reel strip animaci válců jako základ/fallback
 * postupné zastavení válců zleva doprava
 * PixiJS canvas efektovou vrstvu
 * ambient glow efekt
 * particle efekty v pozadí
 * PixiJS win efekt při výhře
 * CSS screen shake / win impact feedback
+* PixiJS renderer válců jako samostatný canvas prototyp
+* plynulé PixiJS točení válců
+* postupné PixiJS zastavování válců zleva doprava
+* vektorově kreslené PixiJS symboly
+* vizuální polish PixiJS reel rendereru
 * oddělení UI od herní logiky
 * oddělení vizuálních efektů od herních výpočtů
+* oddělení PixiJS rendereru od backendového výsledku
 * základní backend API v Node.js / Express
 * propojení frontendu s backendem přes `POST /api/game/spin`
 * fallback režim, kdy hra běží dál lokálně, pokud backend není dostupný
@@ -78,6 +84,7 @@ careai-atis-demo/
 │  │  ├─ styles/
 │  │  │  └─ main.css
 │  │  ├─ pixi-effects.js
+│  │  ├─ pixi-reels.js
 │  │  └─ main.js
 │  ├─ index.html
 │  └─ package.json
@@ -229,23 +236,27 @@ Blank symbol nemá výplatní hodnotu a nepočítá se jako výherní symbol.
 
 ## Animace válců
 
-Aktuální verze obsahuje DOM animaci válců.
+Projekt má dvě vrstvy vykreslení válců.
 
-Při spinu se ve frontendu nejdřív spustí samostatná animační vrstva. Každý sloupec se během točení vykreslí jako svislý pás symbolů, který se pohybuje nahoru. Výsledek ze serveru se nepoužije hned vizuálně, ale až při postupném zastavování válců.
+První vrstva je původní DOM/CSS reel strip animace. Ta zůstává v projektu jako stabilní základ a fallback. Při spinu se každý sloupec vykreslí jako svislý pás symbolů a zastavuje se postupně zleva doprava.
 
-Zastavení probíhá po jednotlivých sloupcích zleva doprava. Po dokončení animace se zobrazí finální výsledek, aktualizují se kredity a případně se zvýrazní výherní symboly podle vítězné linie.
+Druhá vrstva je PixiJS reel renderer v souboru `frontend/src/pixi-reels.js`. Ten postupně přebírá vizuální odpovědnost za samotné válce. Umí vykreslit slot grid do canvasu, spustit plynulé točení válců, zastavovat válce zleva doprava a zobrazit finální výsledek podle dat z backendu nebo lokálního fallbacku.
 
-Tato část je záměrně řešená přes HTML/CSS/JavaScript, aby bylo možné rychle vytvořit funkční prototyp. PixiJS je zatím použitý jako samostatná efektová vrstva, která nepřepisuje existující DOM logiku. Další přirozený krok je postupně převést samotné vykreslení válců na PixiJS canvas.
+Výsledek hry stále neurčuje animace. Výsledek připraví backend API nebo fallback výpočet a vizuální vrstva ho pouze zobrazí. Díky tomu zůstává oddělená herní logika od vykreslení.
 
 ## PixiJS integrace
 
-Projekt obsahuje základní PixiJS integraci ve formě samostatné canvas efektové vrstvy.
+Projekt obsahuje dvě oddělené PixiJS části.
 
-PixiJS vrstva je oddělená od hlavní DOM/CSS slot logiky. To znamená, že výpočet výher, stav hry, tlačítka, AUTO režim, TURBO režim a payline systém zůstávají nezávislé na vykreslovacích efektech.
+První část je samostatná efektová canvas vrstva v souboru `frontend/src/pixi-effects.js`. Ta doplňuje DOM/CSS slot o ambient glow, částice v pozadí, win flash, burst efekt a další vizuální feedback při výhře.
+
+Druhá část je PixiJS renderer válců v souboru `frontend/src/pixi-reels.js`. Ten slouží jako prototyp postupného převodu samotných slot válců z DOM/CSS do canvasu. Aktuální verze už umí vykreslit grid symbolů, spustit plynulé točení válců, zastavovat jednotlivé válce zleva doprava a zobrazit finální výsledek podle dat z backendu nebo fallback výpočtu.
+
+PixiJS renderer válců je navržený tak, aby pořád respektoval existující herní logiku. Výsledek hry nepočítá PixiJS, ale backend API nebo lokální fallback. PixiJS řeší pouze vizuální vykreslení, animaci a polish.
 
 Soubor `frontend/src/pixi-effects.js` řeší:
 
-* inicializaci PixiJS aplikace
+* inicializaci PixiJS efektové aplikace
 * vložení transparentního canvasu do slot frame
 * ambient glow efekt
 * jemné částice v pozadí
@@ -255,12 +266,23 @@ Soubor `frontend/src/pixi-effects.js` řeší:
 * resize canvasu podle velikosti slotu
 * bezpečné oddělení efektové vrstvy od klikatelného UI
 
-Win feedback je složený ze dvou částí:
+Soubor `frontend/src/pixi-reels.js` řeší:
 
-* PixiJS efekty v canvas vrstvě
-* CSS animace na DOM frame, například krátký screen shake při výhře
+* inicializaci PixiJS rendereru válců
+* vykreslení slot gridu do canvasu
+* plynulé točení válců
+* postupné zastavování válců zleva doprava
+* napojení finálního výsledku na backend/fallback grid
+* vektorově kreslené symboly
+* blank symboly
+* výherní zvýraznění symbolů
+* glass overlay přes válce
+* jemný settle/bounce efekt při zastavení válce
+* resize canvasu podle velikosti reel containeru
 
-Tento přístup umožňuje postupný přechod k plně canvasovému řešení bez rizika rozbití už hotové herní logiky.
+DOM/CSS vrstva zatím zůstává jako základní fallback a současně jako jistota, že herní logika, tlačítka, AUTO režim, TURBO režim, backend komunikace a výpočet výher zůstávají stabilní i při postupném přechodu na PixiJS.
+
+Tento přístup ukazuje bezpečný refaktor: místo jednorázového přepsání celé hry do canvasu se nejdřív vytvořila paralelní PixiJS vrstva, která postupně přebírá vizuální odpovědnost.
 
 ## Aktuální stav
 
@@ -278,6 +300,7 @@ Aktuální verze obsahuje:
 * výpočty výher na různých liniích
 * zvýraznění výherních symbolů podle vítězné linie
 * blank symboly pro vyvážení výher
+* DOM reel strip animaci jako základ/fallback
 * postupné zastavování válců
 * plynulejší reel strip animaci
 * PixiJS canvas efektovou vrstvu
@@ -285,6 +308,13 @@ Aktuální verze obsahuje:
 * particle efekty
 * PixiJS win efekt
 * CSS win impact / screen shake
+* PixiJS renderer válců v souboru `frontend/src/pixi-reels.js`
+* plynulé PixiJS točení válců
+* PixiJS zastavování válců zleva doprava
+* vektorově kreslené PixiJS symboly
+* jemný glass overlay přes PixiJS válce
+* settle/bounce efekt při zastavení válce
+* vizuální polish PixiJS symbolů a reel rendereru
 * panel „Zobrazit kód“ s vysvětlením architektury
 * backend API endpoint `GET /api/health`
 * backend API endpoint `POST /api/game/spin`
@@ -308,15 +338,25 @@ Aktuální verze obsahuje:
 * `1.1.6` – 25 payline win system a vyvážení výher pomocí blank symbolů
 * `1.2.0` – PixiJS foundation efektová canvas vrstva
 * `1.2.1` – PixiJS win polish, particle efekty a CSS win impact
+* `1.2.2` – README update for PixiJS effects
+* `1.2.3` – interview polish / code info modal
+* `1.2.4` – realistic slot reel polish
+* `1.3.0` – PixiJS reel renderer prototype
+* `1.3.1` – PixiJS smooth reel spin prototype
+* `1.3.2` – PixiJS left-to-right reel stop
+* `1.3.3` – PixiJS symbol visual polish
+* `1.3.4` – PixiJS reel visual polish
 
 ## Další plán
 
 Další možné kroky:
 
-* zvýraznit výherní linii pomocí PixiJS overlay efektu
+* dokončit přechod samotných válců z DOM/CSS na PixiJS jako hlavní renderer
+* zachovat DOM vrstvu pouze jako fallback
+* připravit asset-based symboly místo čistě vektorových glyphů
 * přidat silnější efekt pro vyšší výhry
-* přidat jemnější easing při zastavování jednotlivých válců
-* postupně převést vykreslení válců na PixiJS canvas
+* zvýraznit výherní linii pomocí PixiJS overlay efektu
+* přidat pokročilejší easing při zastavování jednotlivých válců
 * přidat zvukové efekty
 * přidat GSAP animace pro UI přechody
 * připravit jednoduché nasazení na careai.cz / KAI.cz
@@ -331,10 +371,12 @@ Frontend zároveň obsahuje fallback, takže když backend neběží, hra se nez
 
 Potom jsem doplnil herní režimy AUTO a TURBO a rozšířil výpočet výher z jedné prostřední linie na 25 payline systém. Demo tak ukazuje nejen UI a animaci, ale i základní herní mechaniky, stav aplikace, backend komunikaci a připravenost na další rozšiřování.
 
-V poslední fázi jsem přidal PixiJS jako samostatnou canvas efektovou vrstvu. Nezasahuje do hotové DOM/CSS logiky automatu, ale doplňuje ji o ambient glow, částice a výherní efekty. Díky tomu je projekt připravený na postupný převod dalších vizuálních částí, například válců, do PixiJS canvasu.
+V další fázi jsem přidal PixiJS jako samostatnou canvas efektovou vrstvu. Nezasahovala do hotové DOM/CSS logiky automatu, ale doplnila ji o ambient glow, částice a výherní efekty. Díky tomu bylo možné začít s PixiJS bezpečně, bez rizika rozbití hotové hry.
+
+Následně jsem začal převádět samotné válce do PixiJS. Neudělal jsem to jako riskantní jednorázový přepis, ale jako samostatný renderer vedle existující DOM vrstvy. PixiJS renderer dnes umí vykreslit grid, animovat plynulé točení válců, zastavit je zleva doprava a zobrazit finální výsledek řízený backendem. Díky tomu zůstává herní logika oddělená od vizuální vrstvy a projekt je připravený na další rozšíření například o asset-based symboly, pokročilejší easing, zvuky nebo GSAP animace.
 
 ## Poznámka
 
 Projekt vzniká jako portfolio ukázka. Důraz je kladený na přemýšlení nad strukturou, rozdělení odpovědností v kódu, schopnost rychle vytvořit funkční frontendový prototyp a připravit ho na backendové i canvasové rozšíření.
 
-Výherní pravděpodobnost a výplatní poměry jsou nastavené pro demo režim tak, aby bylo během krátké prezentace dobře vidět, že spin, paylines, zvýraznění výher, AUTO, TURBO, PixiJS efekty a backend komunikace fungují.
+Výherní pravděpodobnost a výplatní poměry jsou nastavené pro demo režim tak, aby bylo během krátké prezentace dobře vidět, že spin, paylines, zvýraznění výher, AUTO, TURBO, PixiJS efekty, PixiJS reel renderer a backend komunikace fungují.
