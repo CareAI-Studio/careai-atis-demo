@@ -18,8 +18,12 @@ import { requestBackendSpin } from "../api/gameApi.js";
 
 const USE_BACKEND_SPIN = true;
 
-const REEL_STOP_DELAY = 320;
-const REEL_STOP_BOUNCE_TIME = 420;
+const NORMAL_REEL_STOP_DELAY = 320;
+const TURBO_REEL_STOP_DELAY = 120;
+const NORMAL_REEL_STOP_BOUNCE_TIME = 420;
+const TURBO_REEL_STOP_BOUNCE_TIME = 260;
+const TURBO_SPIN_DURATION = Math.max(450, Math.round(SPIN_DURATION * 0.45));
+const AUTO_SPIN_DELAY = 650;
 const STRIP_SYMBOL_COUNT = 18;
 
 export class SlotGame {
@@ -31,12 +35,15 @@ export class SlotGame {
       bet: DEFAULT_BET,
       win: 0,
       isSpinning: false,
+      isTurbo: false,
+      isAuto: false,
       grid: [],
       winningResult: null,
       status: "Připraveno ke hře. Výhra se počítá na prostřední linii.",
     };
 
     this.reelTimers = [];
+    this.autoSpinTimer = null;
     this.elements = {};
   }
 
@@ -108,11 +115,23 @@ export class SlotGame {
           </div>
 
           <div class="slot-game__premium-controls">
-            <button type="button" class="slot-game__feature-btn" aria-label="Dekorativní Turbo">
+            <button
+              type="button"
+              class="slot-game__feature-btn"
+              data-action="toggle-turbo"
+              aria-label="Zapnout nebo vypnout Turbo režim"
+              aria-pressed="false"
+            >
               ⚡ TURBO
             </button>
 
-            <button type="button" class="slot-game__feature-btn" aria-label="Dekorativní Auto">
+            <button
+              type="button"
+              class="slot-game__feature-btn"
+              data-action="toggle-auto"
+              aria-label="Zapnout nebo vypnout automatické spiny"
+              aria-pressed="false"
+            >
               ↻ AUTO
             </button>
 
@@ -157,6 +176,12 @@ export class SlotGame {
     this.elements.increaseBetButton = this.rootElement.querySelector(
       '[data-action="increase-bet"]',
     );
+    this.elements.turboButton = this.rootElement.querySelector(
+      '[data-action="toggle-turbo"]',
+    );
+    this.elements.autoButton = this.rootElement.querySelector(
+      '[data-action="toggle-auto"]',
+    );
     this.elements.frame = this.rootElement.querySelector(".slot-game__frame");
   }
 
@@ -171,6 +196,10 @@ export class SlotGame {
     this.elements.increaseBetButton.addEventListener("click", () =>
       this.changeBet(10),
     );
+    this.elements.turboButton.addEventListener("click", () =>
+      this.toggleTurbo(),
+    );
+    this.elements.autoButton.addEventListener("click", () => this.toggleAuto());
   }
 
   renderGrid(grid, options = {}) {
@@ -245,7 +274,14 @@ export class SlotGame {
 
     const stripElement = document.createElement("div");
     stripElement.className = "slot-game__reel-strip";
-    stripElement.style.setProperty("--strip-speed", `${0.62 + reelIndex * 0.08}s`);
+
+    const baseSpeed = this.state.isTurbo ? 0.34 : 0.62;
+    const reelOffset = this.state.isTurbo ? reelIndex * 0.035 : reelIndex * 0.08;
+
+    stripElement.style.setProperty(
+      "--strip-speed",
+      `${baseSpeed + reelOffset}s`,
+    );
 
     for (let index = 0; index < STRIP_SYMBOL_COUNT; index += 1) {
       const randomSymbol =
@@ -267,6 +303,20 @@ export class SlotGame {
     return Array.from({ length: result.winningStreak }, (_, index) => index);
   }
 
+  getSpinDuration() {
+    return this.state.isTurbo ? TURBO_SPIN_DURATION : SPIN_DURATION;
+  }
+
+  getReelStopDelay() {
+    return this.state.isTurbo ? TURBO_REEL_STOP_DELAY : NORMAL_REEL_STOP_DELAY;
+  }
+
+  getReelStopBounceTime() {
+    return this.state.isTurbo
+      ? TURBO_REEL_STOP_BOUNCE_TIME
+      : NORMAL_REEL_STOP_BOUNCE_TIME;
+  }
+
   updateUi() {
     this.elements.credits.textContent = formatNumber(this.state.credits);
     this.elements.bet.textContent = formatNumber(this.state.bet);
@@ -277,8 +327,29 @@ export class SlotGame {
     this.elements.maxBetButton.disabled = this.state.isSpinning;
     this.elements.decreaseBetButton.disabled = this.state.isSpinning;
     this.elements.increaseBetButton.disabled = this.state.isSpinning;
+    this.elements.turboButton.disabled = this.state.isSpinning;
+
+    this.elements.turboButton.classList.toggle(
+      "slot-game__feature-btn--active",
+      this.state.isTurbo,
+    );
+    this.elements.autoButton.classList.toggle(
+      "slot-game__feature-btn--active",
+      this.state.isAuto,
+    );
+
+    this.elements.turboButton.setAttribute(
+      "aria-pressed",
+      String(this.state.isTurbo),
+    );
+    this.elements.autoButton.setAttribute(
+      "aria-pressed",
+      String(this.state.isAuto),
+    );
 
     this.elements.frame.classList.toggle("is-spinning", this.state.isSpinning);
+    this.elements.frame.classList.toggle("is-turbo", this.state.isTurbo);
+    this.elements.frame.classList.toggle("is-auto", this.state.isAuto);
     this.elements.frame.classList.toggle(
       "has-win",
       Boolean(this.state.winningResult && this.state.winningResult.payout > 0),
@@ -299,6 +370,44 @@ export class SlotGame {
 
     this.state.bet = MAX_BET;
     this.state.status = `Maximální sázka nastavena na ${formatNumber(MAX_BET)}.`;
+    this.updateUi();
+  }
+
+  toggleTurbo() {
+    if (this.state.isSpinning) return;
+
+    this.state.isTurbo = !this.state.isTurbo;
+    this.state.status = this.state.isTurbo
+      ? "Turbo režim zapnutý. Spiny a zastavení válců budou rychlejší."
+      : "Turbo režim vypnutý. Spin poběží normální rychlostí.";
+
+    this.updateUi();
+  }
+
+  toggleAuto() {
+    this.state.isAuto = !this.state.isAuto;
+    this.clearAutoSpinTimer();
+
+    if (this.state.isAuto) {
+      if (this.state.credits < this.state.bet) {
+        this.state.isAuto = false;
+        this.state.status =
+          "AUTO nelze zapnout. Nemáš dostatek kreditů pro další spin.";
+        this.updateUi();
+        return;
+      }
+
+      this.state.status = "AUTO režim zapnutý. Automat bude spouštět další spiny.";
+      this.updateUi();
+
+      if (!this.state.isSpinning) {
+        this.scheduleAutoSpin(220);
+      }
+
+      return;
+    }
+
+    this.state.status = "AUTO režim vypnutý.";
     this.updateUi();
   }
 
@@ -354,6 +463,31 @@ export class SlotGame {
     this.reelTimers = [];
   }
 
+  clearAutoSpinTimer() {
+    if (this.autoSpinTimer) {
+      window.clearTimeout(this.autoSpinTimer);
+      this.autoSpinTimer = null;
+    }
+  }
+
+  scheduleAutoSpin(delay = AUTO_SPIN_DELAY) {
+    this.clearAutoSpinTimer();
+
+    if (!this.state.isAuto || this.state.isSpinning) {
+      return;
+    }
+
+    this.autoSpinTimer = window.setTimeout(() => {
+      this.autoSpinTimer = null;
+
+      if (this.state.isAuto && !this.state.isSpinning) {
+        this.spin({
+          triggeredByAuto: true,
+        });
+      }
+    }, delay);
+  }
+
   sleep(ms) {
     return new Promise((resolve) => {
       window.setTimeout(resolve, ms);
@@ -382,8 +516,11 @@ export class SlotGame {
       this.elements.reels.querySelectorAll(".slot-game__reel"),
     );
 
+    const reelStopDelay = this.getReelStopDelay();
+    const reelStopBounceTime = this.getReelStopBounceTime();
+
     for (let reelIndex = 0; reelIndex < finalGrid.length; reelIndex += 1) {
-      await this.sleep(REEL_STOP_DELAY);
+      await this.sleep(reelStopDelay);
 
       const reelElement = reelElements[reelIndex];
 
@@ -398,7 +535,7 @@ export class SlotGame {
 
       const timerId = window.setTimeout(() => {
         reelElement.classList.remove("slot-game__reel--stopping");
-      }, REEL_STOP_BOUNCE_TIME);
+      }, reelStopBounceTime);
 
       this.reelTimers.push(timerId);
     }
@@ -406,11 +543,21 @@ export class SlotGame {
     this.clearReelTimers();
   }
 
-  async spin() {
+  async spin(options = {}) {
+    const { triggeredByAuto = false } = options;
+
     if (this.state.isSpinning) return;
 
+    this.clearAutoSpinTimer();
+
+    if (!triggeredByAuto && this.state.isAuto) {
+      this.state.isAuto = false;
+    }
+
     if (this.state.credits < this.state.bet) {
-      this.state.status = "Nedostatek kreditů. Sniž sázku nebo obnov hru.";
+      this.state.isAuto = false;
+      this.state.status =
+        "Nedostatek kreditů. Sniž sázku nebo obnov hru. AUTO režim byl vypnutý.";
       this.updateUi();
       return;
     }
@@ -420,15 +567,19 @@ export class SlotGame {
     this.state.winningResult = null;
     this.state.credits -= this.state.bet;
     this.state.status = USE_BACKEND_SPIN
-      ? "Točíme... výsledek připravuje herní API."
-      : "Točíme...";
+      ? this.state.isTurbo
+        ? "Turbo spin... výsledek připravuje herní API."
+        : "Točíme... výsledek připravuje herní API."
+      : this.state.isTurbo
+        ? "Turbo spin..."
+        : "Točíme...";
     this.updateUi();
 
     this.startReelAnimation();
 
     const spinResult = await Promise.all([
       this.getFinalSpinGrid(),
-      this.sleep(SPIN_DURATION),
+      this.sleep(this.getSpinDuration()),
     ]).then(([result]) => result);
 
     const { grid: finalGrid, winResult, source } = spinResult;
@@ -449,6 +600,18 @@ export class SlotGame {
       this.state.status = `Výhra ${formatNumber(winResult.payout)} kreditů. Symbol ${winResult.winningSymbol.label} × ${winResult.winningStreak} na prostřední linii. Výsledek připravilo ${resultSourceLabel}.`;
     } else {
       this.state.status = `Tentokrát bez výhry. Zkus další spin. Výsledek připravilo ${resultSourceLabel}.`;
+    }
+
+    if (this.state.isAuto) {
+      if (this.state.credits >= this.state.bet) {
+        this.state.status += " AUTO pokračuje dalším spinem.";
+        this.updateUi();
+        this.scheduleAutoSpin();
+        return;
+      }
+
+      this.state.isAuto = false;
+      this.state.status += " AUTO bylo vypnuté kvůli nedostatku kreditů.";
     }
 
     this.updateUi();

@@ -2271,3 +2271,186 @@ body::before {
     min-width: 0;
   }
 }
+
+/* Auto + Turbo mode v1.1.5 */
+
+.slot-game--premium .slot-game__feature-btn {
+  position: relative;
+  overflow: hidden;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease;
+}
+
+.slot-game--premium .slot-game__feature-btn:not(:disabled) {
+  cursor: pointer;
+}
+
+.slot-game--premium .slot-game__feature-btn:not(:disabled):hover {
+  transform: translateY(-2px);
+  opacity: 1;
+  border-color: rgba(124, 226, 255, 0.55);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 22px rgba(45, 174, 255, 0.18);
+}
+
+.slot-game--premium .slot-game__feature-btn--active {
+  color: #fff7c6;
+  border-color: rgba(255, 218, 85, 0.76);
+  background:
+    radial-gradient(circle at top, rgba(255, 218, 85, 0.2), transparent 68%),
+    radial-gradient(circle at bottom, rgba(45, 174, 255, 0.12), transparent 70%),
+    rgba(12, 18, 48, 0.95);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 218, 85, 0.08),
+    0 0 22px rgba(255, 218, 85, 0.24),
+    0 0 42px rgba(45, 174, 255, 0.1);
+}
+
+.slot-game--premium .slot-game__feature-btn--active::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  pointer-events: none;
+  background: linear-gradient(
+    110deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.28),
+    transparent 65%
+  );
+  animation: careaiFeatureButtonSweep 1.5s ease-in-out infinite;
+}
+
+.slot-game--premium .slot-game__frame.is-turbo .slot-game__reels {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 24px 38px rgba(255, 255, 255, 0.07),
+    inset 0 -24px 38px rgba(0, 0, 0, 0.42),
+    0 0 0 4px rgba(12, 36, 83, 0.82),
+    0 0 34px rgba(255, 218, 85, 0.22),
+    0 0 70px rgba(45, 174, 255, 0.24);
+}
+
+.slot-game--premium .slot-game__frame.is-auto .slot-game__spin-btn {
+  border-color: rgba(124, 226, 255, 0.78);
+}
+
+.slot-game--premium .slot-game__frame.is-auto:not(.is-spinning) .slot-game__spin-btn {
+  animation: careaiAutoSpinReadyPulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes careaiFeatureButtonSweep {
+  from {
+    transform: translateX(-70%) rotate(16deg);
+  }
+
+  to {
+    transform: translateX(70%) rotate(16deg);
+  }
+}
+
+@keyframes careaiAutoSpinReadyPulse {
+  from {
+    transform: scale(1);
+    box-shadow:
+      0 0 28px rgba(255, 204, 71, 0.48),
+      0 0 56px rgba(45, 174, 255, 0.28),
+      inset 0 0 24px rgba(255, 255, 255, 0.26);
+  }
+
+  to {
+    transform: scale(1.025);
+    box-shadow:
+      0 0 32px rgba(255, 204, 71, 0.45),
+      0 0 72px rgba(45, 174, 255, 0.36),
+      inset 0 0 26px rgba(255, 255, 255, 0.28);
+  }
+}
+
+/* Strong active state for AUTO / TURBO v1.1.5 cleanup */
+
+.slot-game--premium .slot-game__feature-btn--active,
+.slot-game--premium .slot-game__feature-btn--active:disabled {
+  opacity: 1;
+  color: #fff7c6;
+  border-color: rgba(255, 218, 85, 0.95);
+  background:
+    radial-gradient(circle at 50% 20%, rgba(255, 232, 120, 0.32), transparent 58%),
+    radial-gradient(circle at 50% 100%, rgba(45, 174, 255, 0.18), transparent 65%),
+    linear-gradient(180deg, rgba(42, 29, 70, 0.98), rgba(12, 18, 48, 0.98));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 218, 85, 0.18),
+    0 0 18px rgba(255, 218, 85, 0.42),
+    0 0 38px rgba(255, 218, 85, 0.2),
+    0 0 52px rgba(45, 174, 255, 0.12);
+  text-shadow:
+    0 0 10px rgba(255, 218, 85, 0.72),
+    0 0 18px rgba(255, 218, 85, 0.35);
+}
+
+.slot-game--premium .slot-game__feature-btn--active::before {
+  content: "ON";
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  min-width: 28px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 218, 85, 0.18);
+  border: 1px solid rgba(255, 218, 85, 0.5);
+  color: #fff3ae;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 12px rgba(255, 218, 85, 0.28);
+}
+
+.slot-game--premium .slot-game__feature-btn--active::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  pointer-events: none;
+  background: linear-gradient(
+    110deg,
+    transparent 34%,
+    rgba(255, 255, 255, 0.36),
+    transparent 66%
+  );
+  animation: careaiActiveFeatureSweep 1.35s ease-in-out infinite;
+}
+
+.slot-game--premium .slot-game__frame.is-turbo [data-action="toggle-turbo"] {
+  animation: careaiActiveFeaturePulse 0.95s ease-in-out infinite alternate;
+}
+
+.slot-game--premium .slot-game__frame.is-auto [data-action="toggle-auto"] {
+  animation: careaiActiveFeaturePulse 0.95s ease-in-out infinite alternate;
+}
+
+@keyframes careaiActiveFeatureSweep {
+  from {
+    transform: translateX(-75%) rotate(16deg);
+  }
+
+  to {
+    transform: translateX(75%) rotate(16deg);
+  }
+}
+
+@keyframes careaiActiveFeaturePulse {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(1.035);
+  }
+}
