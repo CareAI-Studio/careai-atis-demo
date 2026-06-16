@@ -15,43 +15,51 @@ const spinState = {
   reels: [],
   layout: null,
   isTurbo: false,
+  settleAnimations: [],
 };
 
 const SYMBOL_STYLE_MAP = {
   AI: {
-    fill: 0x60d7ff,
-    glow: 0x60d7ff,
+    fill: 0x63ddff,
+    glow: 0x4cd3ff,
     accent: 0xffffff,
+    shadow: 0x0b1834,
   },
   "⚡": {
-    fill: 0xff9a3d,
-    glow: 0xffc45c,
-    accent: 0xff5a6e,
+    fill: 0xffb248,
+    glow: 0xffd16c,
+    accent: 0xff6a7d,
+    shadow: 0x2c1322,
   },
   "⭐": {
-    fill: 0xffd95e,
-    glow: 0xffe77a,
+    fill: 0xffdd64,
+    glow: 0xffef98,
     accent: 0xffffff,
+    shadow: 0x2d2108,
   },
   "💎": {
-    fill: 0x69a7ff,
-    glow: 0x8fc4ff,
+    fill: 0x75b6ff,
+    glow: 0xa8d8ff,
     accent: 0xffffff,
+    shadow: 0x0d2147,
   },
   "🤖": {
-    fill: 0xf0b7ff,
-    glow: 0x78d8ff,
-    accent: 0xff5bd6,
+    fill: 0xf0b9ff,
+    glow: 0x77ddff,
+    accent: 0xff63dc,
+    shadow: 0x25123a,
   },
   "☁": {
-    fill: 0xe8e5ff,
-    glow: 0xded9ff,
+    fill: 0xe8e8ff,
+    glow: 0xdadfff,
     accent: 0xffffff,
+    shadow: 0x101b3d,
   },
   "♡": {
-    fill: 0x5ff5ff,
-    glow: 0x5ff5ff,
+    fill: 0x65efff,
+    glow: 0x6ef7ff,
     accent: 0xffffff,
+    shadow: 0x0b2a35,
   },
 };
 
@@ -68,18 +76,20 @@ function getSymbolStyle(symbol) {
 
   if (isBlank) {
     return {
-      fill: 0x10203f,
-      glow: 0x28476f,
-      accent: 0x23395c,
+      fill: 0x0c1732,
+      glow: 0x213a60,
+      accent: 0x294263,
+      shadow: 0x020813,
       isBlank: true,
     };
   }
 
   return (
     SYMBOL_STYLE_MAP[label] || {
-      fill: 0x85e8ff,
+      fill: 0x88eaff,
       glow: 0x66d7ff,
       accent: 0xffffff,
+      shadow: 0x0b1834,
     }
   );
 }
@@ -97,6 +107,47 @@ function clearLayer(layer) {
       texture: true,
       textureSource: true,
     });
+  });
+}
+
+function resetSettleAnimations() {
+  spinState.settleAnimations = [];
+}
+
+function addSettleAnimation(target, options = {}) {
+  if (!target) return;
+
+  const duration = options.duration || 18;
+  const distance = options.distance || 8;
+
+  target.settleElapsed = 0;
+  target.settleDuration = duration;
+  target.settleDistance = distance;
+  target.baseY = target.y;
+  target.baseScaleY = target.scale.y;
+
+  spinState.settleAnimations.push(target);
+}
+
+function updateSettleAnimations(deltaTime) {
+  if (!spinState.settleAnimations.length) return;
+
+  spinState.settleAnimations = spinState.settleAnimations.filter((target) => {
+    target.settleElapsed += deltaTime;
+
+    const progress = Math.min(1, target.settleElapsed / target.settleDuration);
+    const elastic = Math.sin(progress * Math.PI) * (1 - progress);
+
+    target.y = target.baseY + elastic * target.settleDistance;
+    target.scale.y = target.baseScaleY + elastic * 0.018;
+
+    if (progress >= 1) {
+      target.y = target.baseY;
+      target.scale.y = target.baseScaleY;
+      return false;
+    }
+
+    return true;
   });
 }
 
@@ -125,12 +176,26 @@ function createSymbolText(label, width, height, isBlank = false) {
   return text;
 }
 
+function drawGlyphGlow(parent, cx, cy, radiusX, radiusY, color, alpha = 0.16) {
+  const glow = new Graphics();
+
+  glow.ellipse(cx, cy, radiusX, radiusY);
+  glow.fill({
+    color,
+    alpha,
+  });
+
+  parent.addChild(glow);
+}
+
 function drawStarGlyph(parent, width, height, color, glowColor) {
   const cx = width / 2;
   const cy = height / 2;
-  const outerRadius = Math.min(width, height) * 0.24;
+  const outerRadius = Math.min(width, height) * 0.235;
   const innerRadius = outerRadius * 0.46;
   const points = [];
+
+  drawGlyphGlow(parent, cx, cy, outerRadius * 1.55, outerRadius * 1.28, glowColor, 0.18);
 
   for (let index = 0; index < 10; index += 1) {
     const radius = index % 2 === 0 ? outerRadius : innerRadius;
@@ -142,13 +207,19 @@ function drawStarGlyph(parent, width, height, color, glowColor) {
     });
   }
 
-  const glow = new Graphics();
-  glow.circle(cx, cy, outerRadius * 1.45);
-  glow.fill({
-    color: glowColor,
-    alpha: 0.18,
+  const starShadow = new Graphics();
+  starShadow.moveTo(points[0].x + 2, points[0].y + 3);
+
+  for (let index = 1; index < points.length; index += 1) {
+    starShadow.lineTo(points[index].x + 2, points[index].y + 3);
+  }
+
+  starShadow.closePath();
+  starShadow.fill({
+    color: 0x000000,
+    alpha: 0.2,
   });
-  parent.addChild(glow);
+  parent.addChild(starShadow);
 
   const star = new Graphics();
   star.moveTo(points[0].x, points[0].y);
@@ -165,7 +236,7 @@ function drawStarGlyph(parent, width, height, color, glowColor) {
   star.stroke({
     width: 2,
     color: 0xffffff,
-    alpha: 0.35,
+    alpha: 0.42,
   });
 
   parent.addChild(star);
@@ -174,15 +245,21 @@ function drawStarGlyph(parent, width, height, color, glowColor) {
 function drawDiamondGlyph(parent, width, height, color, glowColor) {
   const cx = width / 2;
   const cy = height / 2;
-  const size = Math.min(width, height) * 0.27;
+  const size = Math.min(width, height) * 0.265;
 
-  const glow = new Graphics();
-  glow.circle(cx, cy, size * 1.35);
-  glow.fill({
-    color: glowColor,
-    alpha: 0.18,
+  drawGlyphGlow(parent, cx, cy, size * 1.45, size * 1.25, glowColor, 0.18);
+
+  const shadow = new Graphics();
+  shadow.moveTo(cx + 2, cy - size + 3);
+  shadow.lineTo(cx + size * 0.95 + 2, cy + 3);
+  shadow.lineTo(cx + 2, cy + size + 3);
+  shadow.lineTo(cx - size * 0.95 + 2, cy + 3);
+  shadow.closePath();
+  shadow.fill({
+    color: 0x000000,
+    alpha: 0.2,
   });
-  parent.addChild(glow);
+  parent.addChild(shadow);
 
   const diamond = new Graphics();
   diamond.moveTo(cx, cy - size);
@@ -197,7 +274,7 @@ function drawDiamondGlyph(parent, width, height, color, glowColor) {
   diamond.stroke({
     width: 2,
     color: 0xffffff,
-    alpha: 0.32,
+    alpha: 0.36,
   });
   parent.addChild(diamond);
 
@@ -209,7 +286,7 @@ function drawDiamondGlyph(parent, width, height, color, glowColor) {
   shine.closePath();
   shine.fill({
     color: 0xffffff,
-    alpha: 0.18,
+    alpha: 0.22,
   });
   parent.addChild(shine);
 }
@@ -217,15 +294,23 @@ function drawDiamondGlyph(parent, width, height, color, glowColor) {
 function drawLightningGlyph(parent, width, height, color, glowColor) {
   const cx = width / 2;
   const cy = height / 2;
-  const size = Math.min(width, height) * 0.31;
+  const size = Math.min(width, height) * 0.305;
 
-  const glow = new Graphics();
-  glow.circle(cx, cy, size * 1.25);
-  glow.fill({
-    color: glowColor,
-    alpha: 0.18,
+  drawGlyphGlow(parent, cx, cy, size * 1.35, size * 1.25, glowColor, 0.18);
+
+  const shadow = new Graphics();
+  shadow.moveTo(cx + size * 0.08 + 2, cy - size + 3);
+  shadow.lineTo(cx - size * 0.46 + 2, cy + size * 0.08 + 3);
+  shadow.lineTo(cx - size * 0.08 + 2, cy + size * 0.08 + 3);
+  shadow.lineTo(cx - size * 0.22 + 2, cy + size + 3);
+  shadow.lineTo(cx + size * 0.5 + 2, cy - size * 0.2 + 3);
+  shadow.lineTo(cx + size * 0.12 + 2, cy - size * 0.2 + 3);
+  shadow.closePath();
+  shadow.fill({
+    color: 0x000000,
+    alpha: 0.2,
   });
-  parent.addChild(glow);
+  parent.addChild(shadow);
 
   const bolt = new Graphics();
   bolt.moveTo(cx + size * 0.08, cy - size);
@@ -242,7 +327,7 @@ function drawLightningGlyph(parent, width, height, color, glowColor) {
   bolt.stroke({
     width: 2,
     color: 0xffffff,
-    alpha: 0.25,
+    alpha: 0.3,
   });
   parent.addChild(bolt);
 }
@@ -252,13 +337,31 @@ function drawHeartGlyph(parent, width, height, color, glowColor) {
   const cy = height / 2;
   const size = Math.min(width, height) * 0.22;
 
-  const glow = new Graphics();
-  glow.circle(cx, cy, size * 1.75);
-  glow.fill({
-    color: glowColor,
-    alpha: 0.18,
+  drawGlyphGlow(parent, cx, cy, size * 1.8, size * 1.55, glowColor, 0.17);
+
+  const shadow = new Graphics();
+  shadow.moveTo(cx + 2, cy + size * 0.72 + 3);
+  shadow.bezierCurveTo(
+    cx - size * 1.35 + 2,
+    cy - size * 0.25 + 3,
+    cx - size * 0.72 + 2,
+    cy - size * 1.25 + 3,
+    cx + 2,
+    cy - size * 0.48 + 3,
+  );
+  shadow.bezierCurveTo(
+    cx + size * 0.72 + 2,
+    cy - size * 1.25 + 3,
+    cx + size * 1.35 + 2,
+    cy - size * 0.25 + 3,
+    cx + 2,
+    cy + size * 0.72 + 3,
+  );
+  shadow.fill({
+    color: 0x000000,
+    alpha: 0.2,
   });
-  parent.addChild(glow);
+  parent.addChild(shadow);
 
   const heart = new Graphics();
   heart.moveTo(cx, cy + size * 0.72);
@@ -285,7 +388,7 @@ function drawHeartGlyph(parent, width, height, color, glowColor) {
   heart.stroke({
     width: 2,
     color: 0xffffff,
-    alpha: 0.28,
+    alpha: 0.32,
   });
   parent.addChild(heart);
 }
@@ -295,13 +398,24 @@ function drawCloudGlyph(parent, width, height, color, glowColor) {
   const cy = height / 2;
   const size = Math.min(width, height) * 0.2;
 
-  const glow = new Graphics();
-  glow.ellipse(cx, cy, size * 1.8, size * 1.1);
-  glow.fill({
-    color: glowColor,
-    alpha: 0.16,
+  drawGlyphGlow(parent, cx, cy, size * 1.95, size * 1.18, glowColor, 0.16);
+
+  const shadow = new Graphics();
+  shadow.circle(cx - size * 0.7 + 2, cy + size * 0.12 + 3, size * 0.72);
+  shadow.circle(cx + 2, cy - size * 0.16 + 3, size);
+  shadow.circle(cx + size * 0.78 + 2, cy + size * 0.08 + 3, size * 0.74);
+  shadow.roundRect(
+    cx - size * 1.48 + 2,
+    cy + 3,
+    size * 2.96,
+    size * 0.8,
+    size * 0.34,
+  );
+  shadow.fill({
+    color: 0x000000,
+    alpha: 0.18,
   });
-  parent.addChild(glow);
+  parent.addChild(shadow);
 
   const cloud = new Graphics();
   cloud.circle(cx - size * 0.7, cy + size * 0.12, size * 0.72);
@@ -315,7 +429,7 @@ function drawCloudGlyph(parent, width, height, color, glowColor) {
   cloud.stroke({
     width: 2,
     color: 0xffffff,
-    alpha: 0.25,
+    alpha: 0.28,
   });
   parent.addChild(cloud);
 }
@@ -323,15 +437,17 @@ function drawCloudGlyph(parent, width, height, color, glowColor) {
 function drawRobotGlyph(parent, width, height, color, glowColor, accentColor) {
   const cx = width / 2;
   const cy = height / 2;
-  const size = Math.min(width, height) * 0.27;
+  const size = Math.min(width, height) * 0.265;
 
-  const glow = new Graphics();
-  glow.circle(cx, cy, size * 1.48);
-  glow.fill({
-    color: glowColor,
-    alpha: 0.19,
+  drawGlyphGlow(parent, cx, cy, size * 1.56, size * 1.42, glowColor, 0.19);
+
+  const shadow = new Graphics();
+  shadow.roundRect(cx - size + 2, cy - size * 0.88 + 3, size * 2, size * 1.7, 10);
+  shadow.fill({
+    color: 0x000000,
+    alpha: 0.2,
   });
-  parent.addChild(glow);
+  parent.addChild(shadow);
 
   const antenna = new Graphics();
   antenna.rect(cx - 1, cy - size * 1.45, 2, size * 0.32);
@@ -351,7 +467,7 @@ function drawRobotGlyph(parent, width, height, color, glowColor, accentColor) {
   head.stroke({
     width: 2,
     color: 0xffffff,
-    alpha: 0.3,
+    alpha: 0.34,
   });
   parent.addChild(head);
 
@@ -359,7 +475,7 @@ function drawRobotGlyph(parent, width, height, color, glowColor, accentColor) {
   visor.roundRect(cx - size * 0.66, cy - size * 0.42, size * 1.32, size * 0.48, 8);
   visor.fill({
     color: 0x0d1a38,
-    alpha: 0.78,
+    alpha: 0.82,
   });
   parent.addChild(visor);
 
@@ -383,7 +499,7 @@ function drawRobotGlyph(parent, width, height, color, glowColor, accentColor) {
   mouth.roundRect(cx - size * 0.36, cy + size * 0.36, size * 0.72, 3, 2);
   mouth.fill({
     color: 0xffffff,
-    alpha: 0.45,
+    alpha: 0.5,
   });
   parent.addChild(mouth);
 }
@@ -392,13 +508,24 @@ function drawAiGlyph(parent, width, height, color, glowColor) {
   const cx = width / 2;
   const cy = height / 2;
 
-  const glow = new Graphics();
-  glow.ellipse(cx, cy, width * 0.3, height * 0.22);
-  glow.fill({
-    color: glowColor,
-    alpha: 0.18,
+  drawGlyphGlow(parent, cx, cy, width * 0.3, height * 0.22, glowColor, 0.18);
+
+  const textShadow = new Text({
+    text: "AI",
+    style: {
+      fontFamily: "Arial, sans-serif",
+      fontSize: Math.max(28, Math.min(width, height) * 0.4),
+      fontWeight: "900",
+      fill: 0x000000,
+      align: "center",
+    },
   });
-  parent.addChild(glow);
+
+  textShadow.anchor.set(0.5);
+  textShadow.x = cx + 2;
+  textShadow.y = cy + 3;
+  textShadow.alpha = 0.26;
+  parent.addChild(textShadow);
 
   const text = new Text({
     text: "AI",
@@ -412,7 +539,7 @@ function drawAiGlyph(parent, width, height, color, glowColor) {
         color: 0x000000,
         blur: 8,
         distance: 3,
-        alpha: 0.8,
+        alpha: 0.78,
       },
     },
   });
@@ -429,12 +556,22 @@ function drawSymbolGlyph(parent, symbol, width, height, symbolStyle) {
 
   if (symbolStyle.isBlank) {
     const ghost = new Graphics();
-    ghost.ellipse(width / 2, height / 2, width * 0.28, height * 0.2);
+
+    ghost.ellipse(width / 2, height / 2, width * 0.28, height * 0.19);
     ghost.fill({
-      color: 0x1a2e52,
-      alpha: 0.35,
+      color: 0x172949,
+      alpha: 0.32,
     });
+
+    const ghostLine = new Graphics();
+    ghostLine.roundRect(width * 0.28, height * 0.5 - 1, width * 0.44, 2, 2);
+    ghostLine.fill({
+      color: 0x395a82,
+      alpha: 0.18,
+    });
+
     parent.addChild(ghost);
+    parent.addChild(ghostLine);
     return;
   }
 
@@ -491,54 +628,69 @@ function drawSymbolTileContent(tile, symbol, width, height, options = {}) {
 
   clearLayer(tile);
 
-  tile.alpha = isDimmed ? 0.42 : 1;
+  tile.alpha = isDimmed ? 0.48 : 1;
 
   const base = new Graphics();
 
-  base.roundRect(0, 0, width, height, 14);
+  base.roundRect(0, 0, width, height, 15);
   base.fill({
-    color: symbolStyle.isBlank ? 0x071126 : 0x12254f,
-    alpha: symbolStyle.isBlank ? 0.72 : 0.94,
+    color: symbolStyle.isBlank ? 0x071126 : 0x10214b,
+    alpha: symbolStyle.isBlank ? 0.74 : 0.96,
+  });
+
+  base.stroke({
+    width: 1,
+    color: symbolStyle.isBlank ? 0x1a355a : 0x2e79b9,
+    alpha: symbolStyle.isBlank ? 0.18 : 0.34,
   });
 
   tile.addChild(base);
 
-  const depth = new Graphics();
-  depth.roundRect(4, 4, width - 8, height - 8, 12);
-  depth.fill({
-    color: 0x000000,
-    alpha: symbolStyle.isBlank ? 0.1 : 0.06,
+  const innerPanel = new Graphics();
+  innerPanel.roundRect(5, 5, width - 10, height - 10, 12);
+  innerPanel.fill({
+    color: symbolStyle.isBlank ? 0x08152d : 0x13295a,
+    alpha: symbolStyle.isBlank ? 0.7 : 0.86,
   });
-  depth.stroke({
+  innerPanel.stroke({
     width: isWinning ? 2 : 1,
-    color: isWinning ? 0xffd76a : 0x2e6da8,
-    alpha: isWinning ? 0.98 : 0.32,
+    color: isWinning ? 0xffd76a : 0x62cfff,
+    alpha: isWinning ? 0.94 : symbolStyle.isBlank ? 0.12 : 0.22,
   });
-  tile.addChild(depth);
+  tile.addChild(innerPanel);
 
   const innerGlow = new Graphics();
-  innerGlow.ellipse(width * 0.5, height * 0.52, width * 0.42, height * 0.36);
+  innerGlow.ellipse(width * 0.5, height * 0.52, width * 0.42, height * 0.34);
   innerGlow.fill({
     color: isWinning ? 0xffd76a : symbolStyle.glow,
-    alpha: isWinning ? 0.25 : symbolStyle.isBlank ? 0.06 : 0.14,
+    alpha: isWinning ? 0.24 : symbolStyle.isBlank ? 0.045 : 0.13,
   });
   tile.addChild(innerGlow);
 
   const bottomShade = new Graphics();
-  bottomShade.roundRect(6, height * 0.56, width - 12, height * 0.34, 10);
+  bottomShade.roundRect(7, height * 0.58, width - 14, height * 0.32, 10);
   bottomShade.fill({
     color: 0x000000,
-    alpha: 0.13,
+    alpha: symbolStyle.isBlank ? 0.11 : 0.15,
   });
   tile.addChild(bottomShade);
 
   const topShine = new Graphics();
-  topShine.roundRect(7, 7, width - 14, height * 0.3, 12);
+  topShine.roundRect(8, 7, width - 16, height * 0.28, 12);
   topShine.fill({
     color: 0xffffff,
-    alpha: symbolStyle.isBlank ? 0.035 : 0.105,
+    alpha: symbolStyle.isBlank ? 0.03 : 0.095,
   });
   tile.addChild(topShine);
+
+  const edgeLight = new Graphics();
+  edgeLight.roundRect(7, 7, width - 14, height - 14, 12);
+  edgeLight.stroke({
+    width: 1,
+    color: 0xffffff,
+    alpha: symbolStyle.isBlank ? 0.025 : 0.08,
+  });
+  tile.addChild(edgeLight);
 
   const glyphLayer = new Container();
   glyphLayer.x = 0;
@@ -552,12 +704,12 @@ function drawSymbolTileContent(tile, symbol, width, height, options = {}) {
     motionShade.rect(0, 0, width, height);
     motionShade.fill({
       color: 0x000000,
-      alpha: 0.08,
+      alpha: 0.07,
     });
     tile.addChild(motionShade);
 
     const motionLine = new Graphics();
-    motionLine.rect(8, height * 0.5, width - 16, 2);
+    motionLine.roundRect(10, height * 0.5, width - 20, 2, 2);
     motionLine.fill({
       color: 0xffffff,
       alpha: 0.08,
@@ -567,11 +719,11 @@ function drawSymbolTileContent(tile, symbol, width, height, options = {}) {
 
   if (isWinning) {
     const winGlow = new Graphics();
-    winGlow.roundRect(-2, -2, width + 4, height + 4, 16);
+    winGlow.roundRect(-2, -2, width + 4, height + 4, 17);
     winGlow.stroke({
       width: 3,
       color: 0xffd76a,
-      alpha: 0.95,
+      alpha: 0.92,
     });
     tile.addChild(winGlow);
 
@@ -604,9 +756,9 @@ function getLayout(grid) {
   const columns = grid?.length || 5;
   const rows = grid?.[0]?.length || 3;
 
-  const padding = 10;
-  const columnGap = 8;
-  const rowGap = 8;
+  const padding = Math.max(8, Math.min(12, width * 0.025));
+  const columnGap = Math.max(7, Math.min(10, width * 0.018));
+  const rowGap = Math.max(7, Math.min(10, height * 0.035));
 
   const tileWidth =
     (width - padding * 2 - columnGap * (columns - 1)) / columns;
@@ -630,18 +782,39 @@ function getLayout(grid) {
 function drawBackground(width, height) {
   const background = new Graphics();
 
-  background.roundRect(0, 0, width, height, 18);
+  background.roundRect(0, 0, width, height, 20);
   background.fill({
-    color: 0x061127,
-    alpha: 0.96,
+    color: 0x050e22,
+    alpha: 0.98,
   });
   background.stroke({
     width: 1,
-    color: 0x50cfff,
-    alpha: 0.28,
+    color: 0x60d7ff,
+    alpha: 0.32,
   });
 
   reelsLayer.addChild(background);
+
+  const inner = new Graphics();
+  inner.roundRect(5, 5, width - 10, height - 10, 17);
+  inner.fill({
+    color: 0x071733,
+    alpha: 0.72,
+  });
+  inner.stroke({
+    width: 1,
+    color: 0xffffff,
+    alpha: 0.045,
+  });
+  reelsLayer.addChild(inner);
+
+  const centerGlow = new Graphics();
+  centerGlow.roundRect(7, height * 0.34, width - 14, height * 0.32, 14);
+  centerGlow.fill({
+    color: 0x143263,
+    alpha: 0.32,
+  });
+  reelsLayer.addChild(centerGlow);
 }
 
 function drawReelSeparators(parent, width, height, columns) {
@@ -650,20 +823,21 @@ function drawReelSeparators(parent, width, height, columns) {
   for (let index = 1; index < columns; index += 1) {
     const x = gapX * index;
 
-    const separator = new Graphics();
-    separator.rect(x - 1, 8, 2, height - 16);
-    separator.fill({
+    const separatorShadow = new Graphics();
+    separatorShadow.rect(x - 2, 8, 3, height - 16);
+    separatorShadow.fill({
       color: 0x000000,
-      alpha: 0.38,
+      alpha: 0.36,
     });
+    parent.addChild(separatorShadow);
 
-    separator.rect(x, 8, 1, height - 16);
-    separator.fill({
+    const separatorLight = new Graphics();
+    separatorLight.rect(x + 1, 10, 1, height - 20);
+    separatorLight.fill({
       color: 0x75d7ff,
-      alpha: 0.14,
+      alpha: 0.13,
     });
-
-    parent.addChild(separator);
+    parent.addChild(separatorLight);
   }
 }
 
@@ -672,31 +846,51 @@ function drawGlassOverlay(width, height) {
 
   clearLayer(overlayLayer);
 
+  const softGlass = new Graphics();
+  softGlass.roundRect(0, 0, width, height, 20);
+  softGlass.fill({
+    color: 0xffffff,
+    alpha: 0.018,
+  });
+  overlayLayer.addChild(softGlass);
+
   const shine = new Graphics();
   shine.moveTo(width * 0.08, 0);
-  shine.lineTo(width * 0.42, 0);
-  shine.lineTo(width * 0.22, height);
+  shine.lineTo(width * 0.38, 0);
+  shine.lineTo(width * 0.2, height);
   shine.lineTo(width * -0.08, height);
   shine.closePath();
   shine.fill({
     color: 0xffffff,
-    alpha: 0.055,
+    alpha: 0.045,
   });
   overlayLayer.addChild(shine);
+
+  const secondShine = new Graphics();
+  secondShine.moveTo(width * 0.68, 0);
+  secondShine.lineTo(width * 0.78, 0);
+  secondShine.lineTo(width * 0.58, height);
+  secondShine.lineTo(width * 0.48, height);
+  secondShine.closePath();
+  secondShine.fill({
+    color: 0xffffff,
+    alpha: 0.022,
+  });
+  overlayLayer.addChild(secondShine);
 
   const centerLineGlow = new Graphics();
   centerLineGlow.rect(0, height * 0.47, width, height * 0.06);
   centerLineGlow.fill({
     color: 0xffd76a,
-    alpha: 0.07,
+    alpha: 0.055,
   });
   overlayLayer.addChild(centerLineGlow);
 
   const centerLine = new Graphics();
-  centerLine.rect(0, height * 0.485, width, 2);
+  centerLine.rect(0, height * 0.492, width, 1.5);
   centerLine.fill({
     color: 0xffd76a,
-    alpha: 0.34,
+    alpha: 0.25,
   });
   overlayLayer.addChild(centerLine);
 
@@ -704,7 +898,7 @@ function drawGlassOverlay(width, height) {
   topShadow.rect(0, 0, width, height * 0.18);
   topShadow.fill({
     color: 0x000614,
-    alpha: 0.32,
+    alpha: 0.3,
   });
   overlayLayer.addChild(topShadow);
 
@@ -712,9 +906,18 @@ function drawGlassOverlay(width, height) {
   bottomShadow.rect(0, height * 0.82, width, height * 0.18);
   bottomShadow.fill({
     color: 0x000614,
-    alpha: 0.36,
+    alpha: 0.34,
   });
   overlayLayer.addChild(bottomShadow);
+
+  const border = new Graphics();
+  border.roundRect(0.5, 0.5, width - 1, height - 1, 20);
+  border.stroke({
+    width: 1,
+    color: 0xffffff,
+    alpha: 0.07,
+  });
+  overlayLayer.addChild(border);
 }
 
 function getWinningPositionKey(position) {
@@ -732,39 +935,40 @@ function stopSpinInternal() {
 }
 
 function drawStaticReel(reel, reelIndex, layout, options = {}) {
-  const {
-    padding,
-    columnGap,
-    rowGap,
-    tileWidth,
-    tileHeight,
-  } = layout;
+  const { padding, columnGap, rowGap, tileWidth, tileHeight } = layout;
 
   const winningSet = getWinningPositionSet(options.winningPositions);
   const reelX = padding + reelIndex * (tileWidth + columnGap);
+  const reelGroup = new Container();
+
+  reelGroup.x = reelX;
+  reelGroup.y = 0;
 
   reel.forEach((symbol, rowIndex) => {
     const y = padding + rowIndex * (tileHeight + rowGap);
     const isWinning = winningSet.has(`${reelIndex}:${rowIndex}`);
     const isDimmed = Boolean(options.isDimmed);
 
-    const tile = createSymbolTile(symbol, reelX, y, tileWidth, tileHeight, {
+    const tile = createSymbolTile(symbol, 0, y, tileWidth, tileHeight, {
       isWinning,
       isDimmed,
     });
 
-    reelsLayer.addChild(tile);
+    reelGroup.addChild(tile);
   });
+
+  reelsLayer.addChild(reelGroup);
+
+  if (options.shouldSettle) {
+    addSettleAnimation(reelGroup, {
+      duration: options.isTurbo ? 12 : 18,
+      distance: options.isTurbo ? 4 : 8,
+    });
+  }
 }
 
 function createSpinningReel(reelIndex, layout, symbols, options = {}) {
-  const {
-    padding,
-    columnGap,
-    tileWidth,
-    tileHeight,
-    stepY,
-  } = layout;
+  const { padding, columnGap, tileWidth, tileHeight, stepY } = layout;
 
   const reelContainer = new Container();
   const reelX = padding + reelIndex * (tileWidth + columnGap);
@@ -799,6 +1003,7 @@ function renderGridInternal(grid, options = {}) {
   if (!pixiApp || !reelsLayer || !grid) return;
 
   stopSpinInternal();
+  resetSettleAnimations();
 
   currentGrid = grid;
 
@@ -828,6 +1033,7 @@ function renderGridInternal(grid, options = {}) {
 function buildSpinningReels(symbols, options = {}) {
   if (!pixiApp || !reelsLayer || !currentGrid) return;
 
+  resetSettleAnimations();
   clearLayer(reelsLayer);
 
   const layout = getLayout(currentGrid);
@@ -858,6 +1064,7 @@ function renderStoppingReelsInternal(finalGrid, options = {}) {
 
   currentGrid = finalGrid;
 
+  resetSettleAnimations();
   clearLayer(reelsLayer);
 
   const layout = getLayout(finalGrid);
@@ -875,6 +1082,7 @@ function renderStoppingReelsInternal(finalGrid, options = {}) {
 
   const symbols = options.symbols || spinState.symbols || [];
   const isTurbo = Boolean(options.isTurbo);
+  const justStoppedReel = stoppedReels - 1;
 
   drawBackground(width, height);
   drawReelSeparators(reelsLayer, width, height, columns);
@@ -889,6 +1097,8 @@ function renderStoppingReelsInternal(finalGrid, options = {}) {
     if (reelIndex < stoppedReels) {
       drawStaticReel(reel, reelIndex, layout, {
         winningPositions: [],
+        shouldSettle: reelIndex === justStoppedReel,
+        isTurbo,
       });
       return;
     }
@@ -905,13 +1115,12 @@ function renderStoppingReelsInternal(finalGrid, options = {}) {
 
   if (stoppedReels >= columns) {
     stopSpinInternal();
-    renderGridInternal(finalGrid, {
-      winningPositions: options.winningPositions || [],
-    });
   }
 }
 
 function updateSpinningReels(deltaTime) {
+  updateSettleAnimations(deltaTime);
+
   if (!spinState.active || !spinState.layout) return;
 
   const { height, padding, tileHeight, stepY } = spinState.layout;
@@ -1083,6 +1292,7 @@ export function destroyPixiReels() {
   }
 
   stopSpinInternal();
+  resetSettleAnimations();
 
   if (pixiApp) {
     pixiApp.destroy(true, {
