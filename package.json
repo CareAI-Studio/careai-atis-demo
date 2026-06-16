@@ -11,5 +11,8 @@
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "pixi.js": "^8.19.0"
   }
 }

@@ -2478,3 +2478,38 @@ body::before {
   filter: blur(1.2px) brightness(0.85);
   opacity: 0.65;
 }
+
+/* ================================
+   PixiJS foundation effect layer
+   v1.2.0
+================================ */
+
+.slot-game__frame {
+  position: relative;
+  overflow: hidden;
+}
+
+.pixi-effects-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.pixi-effects-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.slot-game__top,
+.slot-game__premium-bar,
+.slot-game__machine,
+.slot-game__premium-controls,
+.slot-game__status {
+  position: relative;
+  z-index: 2;
+}

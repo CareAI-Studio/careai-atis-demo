@@ -15,6 +15,7 @@ import { calculateWin } from "./logic/winCalculator.js";
 import { formatNumber } from "./logic/formatNumber.js";
 
 import { requestBackendSpin } from "../api/gameApi.js";
+import { initPixiEffects, playPixiWinEffect } from "../pixi-effects.js";
 
 const USE_BACKEND_SPIN = true;
 
@@ -54,12 +55,26 @@ export class SlotGame {
     this.bindEvents();
     this.renderGrid(this.state.grid);
     this.updateUi();
+    this.initPixiLayer();
+  }
+
+  initPixiLayer() {
+    initPixiEffects({
+      containerSelector: "[data-pixi-effects-layer]",
+      particleCount: 46,
+    }).catch((error) => {
+      console.warn("PixiJS effect layer failed to initialize.", error);
+    });
+
+    window.careAiPixiWin = playPixiWinEffect;
   }
 
   renderShell() {
     this.rootElement.innerHTML = `
       <div class="slot-game slot-game--premium">
         <div class="slot-game__frame">
+          <div class="pixi-effects-layer" data-pixi-effects-layer></div>
+
           <div class="slot-game__top">
             <div class="slot-game__mode">DEMO REŽIM</div>
             <div class="slot-game__title">
@@ -409,7 +424,7 @@ export class SlotGame {
 
   async getFinalSpinGrid() {
     if (!USE_BACKEND_SPIN) {
-      const localGrid = createDemoFinalGrid(DEMO_SYMBOLS, 0.08);
+      const localGrid = createDemoFinalGrid(DEMO_SYMBOLS, 0.04);
       const localWinResult = calculateWin(localGrid, this.state.bet);
 
       return {
@@ -432,7 +447,7 @@ export class SlotGame {
     } catch (error) {
       console.warn("Backend spin failed, using local frontend spin.", error);
 
-      const fallbackGrid = createDemoFinalGrid(DEMO_SYMBOLS, 0.08);
+      const fallbackGrid = createDemoFinalGrid(DEMO_SYMBOLS, 0.04);
       const fallbackWinResult = calculateWin(fallbackGrid, this.state.bet);
 
       return {
@@ -604,6 +619,8 @@ export class SlotGame {
 
     if (winResult.payout > 0) {
       const winningLinesText = this.getWinningLinesText(winResult);
+
+      playPixiWinEffect();
 
       this.state.status = `Výhra ${formatNumber(winResult.payout)} kreditů. Symbol ${winResult.winningSymbol.label} × ${winResult.winningStreak} na ${winningLinesText}. Výsledek připravilo ${resultSourceLabel}.`;
     } else {
