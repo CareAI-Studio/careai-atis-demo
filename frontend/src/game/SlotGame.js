@@ -20,6 +20,7 @@ import {
   initPixiReels,
   renderPixiReelsGrid,
   renderPixiReelsSpinning,
+  renderPixiReelsStopping,
 } from "../pixi-reels.js";
 
 const USE_BACKEND_SPIN = true;
@@ -99,6 +100,14 @@ export class SlotGame {
     });
   }
 
+  renderPixiStopping(finalGrid, stoppedReels) {
+    renderPixiReelsStopping(finalGrid, {
+      stoppedReels,
+      symbols: DEMO_SYMBOLS,
+      isTurbo: this.state.isTurbo,
+    });
+  }
+
   clearPixiSpinTimer() {
     if (this.pixiSpinTimer) {
       window.clearInterval(this.pixiSpinTimer);
@@ -107,7 +116,9 @@ export class SlotGame {
   }
 
   renderPixiSpinning() {
-    renderPixiReelsSpinning(DEMO_SYMBOLS);
+    renderPixiReelsSpinning(DEMO_SYMBOLS, {
+      isTurbo: this.state.isTurbo,
+    });
   }
 
   startPixiSpinLoop() {
@@ -250,7 +261,8 @@ export class SlotGame {
 
   cacheElements() {
     this.elements.reels = this.rootElement.querySelector("[data-reels]");
-    this.elements.pixiReels = this.rootElement.querySelector("[data-pixi-reels]");
+    this.elements.pixiReels =
+      this.rootElement.querySelector("[data-pixi-reels]");
     this.elements.credits = this.rootElement.querySelector("[data-credits]");
     this.elements.bet = this.rootElement.querySelector("[data-bet]");
     this.elements.win = this.rootElement.querySelector("[data-win]");
@@ -619,27 +631,22 @@ export class SlotGame {
 
       const reelElement = reelElements[reelIndex];
 
-      if (!reelElement) continue;
+      if (reelElement) {
+        reelElement.classList.remove("slot-game__reel--spinning");
+        reelElement.classList.add("slot-game__reel--stopping");
 
-      reelElement.classList.remove("slot-game__reel--spinning");
-      reelElement.classList.add("slot-game__reel--stopping");
+        this.renderReelSymbols(reelElement, finalGrid[reelIndex], reelIndex, {
+          suppressWinHighlight: true,
+        });
 
-      this.renderReelSymbols(reelElement, finalGrid[reelIndex], reelIndex, {
-        suppressWinHighlight: true,
-      });
+        const timerId = window.setTimeout(() => {
+          reelElement.classList.remove("slot-game__reel--stopping");
+        }, reelStopBounceTime);
 
-      this.renderPixiGrid(finalGrid, {
-        suppressWinHighlight: true,
-        dimUnstopped: true,
-        stoppedReels: reelIndex + 1,
-        winningPositions: [],
-      });
+        this.reelTimers.push(timerId);
+      }
 
-      const timerId = window.setTimeout(() => {
-        reelElement.classList.remove("slot-game__reel--stopping");
-      }, reelStopBounceTime);
-
-      this.reelTimers.push(timerId);
+      this.renderPixiStopping(finalGrid, reelIndex + 1);
     }
 
     this.clearReelTimers();

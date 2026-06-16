@@ -7,6 +7,15 @@ let resizeObserver = null;
 let currentContainer = null;
 let currentGrid = null;
 let isInitialized = false;
+let tickerReady = false;
+
+const spinState = {
+  active: false,
+  symbols: [],
+  reels: [],
+  layout: null,
+  isTurbo: false,
+};
 
 const SYMBOL_STYLE_MAP = {
   AI: {
@@ -75,6 +84,10 @@ function getSymbolStyle(symbol) {
   );
 }
 
+function getRandomSymbol(symbols) {
+  return symbols[Math.floor(Math.random() * symbols.length)];
+}
+
 function clearLayer(layer) {
   if (!layer) return;
 
@@ -87,22 +100,7 @@ function clearLayer(layer) {
   });
 }
 
-function drawRoundedPanel(parent, x, y, width, height, radius, fill, stroke) {
-  const panel = new Graphics();
-
-  panel.roundRect(x, y, width, height, radius);
-  panel.fill(fill);
-
-  if (stroke) {
-    panel.stroke(stroke);
-  }
-
-  parent.addChild(panel);
-
-  return panel;
-}
-
-function createSymbolText(label, x, y, width, height, isBlank = false) {
+function createSymbolText(label, width, height, isBlank = false) {
   const text = new Text({
     text: label,
     style: {
@@ -121,20 +119,19 @@ function createSymbolText(label, x, y, width, height, isBlank = false) {
   });
 
   text.anchor.set(0.5);
-  text.x = x + width / 2;
-  text.y = y + height / 2;
+  text.x = width / 2;
+  text.y = height / 2;
 
   return text;
 }
 
-function drawSymbolTile(parent, symbol, x, y, width, height, options = {}) {
-  const { isWinning = false, isDimmed = false } = options;
+function drawSymbolTileContent(tile, symbol, width, height, options = {}) {
+  const { isWinning = false, isDimmed = false, isSpinning = false } = options;
   const symbolStyle = getSymbolStyle(symbol);
   const label = getSymbolLabel(symbol);
 
-  const tile = new Container();
-  tile.x = x;
-  tile.y = y;
+  clearLayer(tile);
+
   tile.alpha = isDimmed ? 0.42 : 1;
 
   const base = new Graphics();
@@ -147,9 +144,9 @@ function drawSymbolTile(parent, symbol, x, y, width, height, options = {}) {
 
   base.roundRect(4, 4, width - 8, height - 8, 12);
   base.stroke({
-    width: 1,
+    width: isWinning ? 2 : 1,
     color: isWinning ? 0xffd76a : 0x2e6da8,
-    alpha: isWinning ? 0.92 : 0.34,
+    alpha: isWinning ? 0.95 : 0.34,
   });
 
   tile.addChild(base);
@@ -158,7 +155,7 @@ function drawSymbolTile(parent, symbol, x, y, width, height, options = {}) {
   innerGlow.ellipse(width * 0.5, height * 0.5, width * 0.42, height * 0.36);
   innerGlow.fill({
     color: isWinning ? 0xffd76a : symbolStyle.glow,
-    alpha: isWinning ? 0.24 : symbolStyle.isBlank ? 0.06 : 0.14,
+    alpha: isWinning ? 0.25 : symbolStyle.isBlank ? 0.06 : 0.16,
   });
   tile.addChild(innerGlow);
 
@@ -169,6 +166,16 @@ function drawSymbolTile(parent, symbol, x, y, width, height, options = {}) {
     alpha: symbolStyle.isBlank ? 0.035 : 0.09,
   });
   tile.addChild(topShine);
+
+  if (isSpinning) {
+    const motionShade = new Graphics();
+    motionShade.rect(0, 0, width, height);
+    motionShade.fill({
+      color: 0x000000,
+      alpha: 0.1,
+    });
+    tile.addChild(motionShade);
+  }
 
   if (isWinning) {
     const winRing = new Graphics();
@@ -181,71 +188,68 @@ function drawSymbolTile(parent, symbol, x, y, width, height, options = {}) {
     tile.addChild(winRing);
   }
 
-  const text = createSymbolText(label, 0, 0, width, height, symbolStyle.isBlank);
+  const text = createSymbolText(label, width, height, symbolStyle.isBlank);
   text.tint = symbolStyle.isBlank ? 0x405a82 : symbolStyle.fill;
   tile.addChild(text);
+}
 
-  parent.addChild(tile);
+function createSymbolTile(symbol, x, y, width, height, options = {}) {
+  const tile = new Container();
+
+  tile.x = x;
+  tile.y = y;
+  tile.symbol = symbol;
+
+  drawSymbolTileContent(tile, symbol, width, height, options);
 
   return tile;
 }
 
-function drawGlassOverlay(width, height) {
-  if (!overlayLayer) return;
+function getLayout(grid) {
+  const width = pixiApp.renderer.width;
+  const height = pixiApp.renderer.height;
 
-  clearLayer(overlayLayer);
+  const columns = grid?.length || 5;
+  const rows = grid?.[0]?.length || 3;
 
-  const topMask = new Graphics();
-  topMask.rect(0, 0, width, height);
-  topMask.fill({
-    color: 0x000818,
-    alpha: 0.02,
+  const padding = 10;
+  const columnGap = 8;
+  const rowGap = 8;
+
+  const tileWidth =
+    (width - padding * 2 - columnGap * (columns - 1)) / columns;
+  const tileHeight = (height - padding * 2 - rowGap * (rows - 1)) / rows;
+  const stepY = tileHeight + rowGap;
+
+  return {
+    width,
+    height,
+    columns,
+    rows,
+    padding,
+    columnGap,
+    rowGap,
+    tileWidth,
+    tileHeight,
+    stepY,
+  };
+}
+
+function drawBackground(width, height) {
+  const background = new Graphics();
+
+  background.roundRect(0, 0, width, height, 18);
+  background.fill({
+    color: 0x061127,
+    alpha: 0.96,
   });
-  overlayLayer.addChild(topMask);
-
-  const shine = new Graphics();
-  shine.moveTo(width * 0.08, 0);
-  shine.lineTo(width * 0.42, 0);
-  shine.lineTo(width * 0.22, height);
-  shine.lineTo(width * -0.08, height);
-  shine.closePath();
-  shine.fill({
-    color: 0xffffff,
-    alpha: 0.055,
+  background.stroke({
+    width: 1,
+    color: 0x50cfff,
+    alpha: 0.28,
   });
-  overlayLayer.addChild(shine);
 
-  const centerLine = new Graphics();
-  centerLine.rect(0, height * 0.485, width, 2);
-  centerLine.fill({
-    color: 0xffd76a,
-    alpha: 0.34,
-  });
-  overlayLayer.addChild(centerLine);
-
-  const centerLineGlow = new Graphics();
-  centerLineGlow.rect(0, height * 0.47, width, height * 0.06);
-  centerLineGlow.fill({
-    color: 0xffd76a,
-    alpha: 0.07,
-  });
-  overlayLayer.addChild(centerLineGlow);
-
-  const topShadow = new Graphics();
-  topShadow.rect(0, 0, width, height * 0.18);
-  topShadow.fill({
-    color: 0x000614,
-    alpha: 0.32,
-  });
-  overlayLayer.addChild(topShadow);
-
-  const bottomShadow = new Graphics();
-  bottomShadow.rect(0, height * 0.82, width, height * 0.18);
-  bottomShadow.fill({
-    color: 0x000614,
-    alpha: 0.36,
-  });
-  overlayLayer.addChild(bottomShadow);
+  reelsLayer.addChild(background);
 }
 
 function drawReelSeparators(parent, width, height, columns) {
@@ -271,6 +275,56 @@ function drawReelSeparators(parent, width, height, columns) {
   }
 }
 
+function drawGlassOverlay(width, height) {
+  if (!overlayLayer) return;
+
+  clearLayer(overlayLayer);
+
+  const shine = new Graphics();
+  shine.moveTo(width * 0.08, 0);
+  shine.lineTo(width * 0.42, 0);
+  shine.lineTo(width * 0.22, height);
+  shine.lineTo(width * -0.08, height);
+  shine.closePath();
+  shine.fill({
+    color: 0xffffff,
+    alpha: 0.055,
+  });
+  overlayLayer.addChild(shine);
+
+  const centerLineGlow = new Graphics();
+  centerLineGlow.rect(0, height * 0.47, width, height * 0.06);
+  centerLineGlow.fill({
+    color: 0xffd76a,
+    alpha: 0.07,
+  });
+  overlayLayer.addChild(centerLineGlow);
+
+  const centerLine = new Graphics();
+  centerLine.rect(0, height * 0.485, width, 2);
+  centerLine.fill({
+    color: 0xffd76a,
+    alpha: 0.34,
+  });
+  overlayLayer.addChild(centerLine);
+
+  const topShadow = new Graphics();
+  topShadow.rect(0, 0, width, height * 0.18);
+  topShadow.fill({
+    color: 0x000614,
+    alpha: 0.32,
+  });
+  overlayLayer.addChild(topShadow);
+
+  const bottomShadow = new Graphics();
+  bottomShadow.rect(0, height * 0.82, width, height * 0.18);
+  bottomShadow.fill({
+    color: 0x000614,
+    alpha: 0.36,
+  });
+  overlayLayer.addChild(bottomShadow);
+}
+
 function getWinningPositionKey(position) {
   return `${position.reelIndex}:${position.rowIndex}`;
 }
@@ -279,68 +333,239 @@ function getWinningPositionSet(winningPositions = []) {
   return new Set(winningPositions.map(getWinningPositionKey));
 }
 
+function stopSpinInternal() {
+  spinState.active = false;
+  spinState.reels = [];
+  spinState.layout = null;
+}
+
+function drawStaticReel(reel, reelIndex, layout, options = {}) {
+  const {
+    padding,
+    columnGap,
+    rowGap,
+    tileWidth,
+    tileHeight,
+  } = layout;
+
+  const winningSet = getWinningPositionSet(options.winningPositions);
+  const reelX = padding + reelIndex * (tileWidth + columnGap);
+
+  reel.forEach((symbol, rowIndex) => {
+    const y = padding + rowIndex * (tileHeight + rowGap);
+    const isWinning = winningSet.has(`${reelIndex}:${rowIndex}`);
+    const isDimmed = Boolean(options.isDimmed);
+
+    const tile = createSymbolTile(symbol, reelX, y, tileWidth, tileHeight, {
+      isWinning,
+      isDimmed,
+    });
+
+    reelsLayer.addChild(tile);
+  });
+}
+
+function createSpinningReel(reelIndex, layout, symbols, options = {}) {
+  const {
+    padding,
+    columnGap,
+    tileWidth,
+    tileHeight,
+    stepY,
+  } = layout;
+
+  const reelContainer = new Container();
+  const reelX = padding + reelIndex * (tileWidth + columnGap);
+  const isTurbo = Boolean(options.isTurbo);
+
+  reelContainer.x = reelX;
+  reelContainer.y = 0;
+  reelContainer.speed = (isTurbo ? 31 : 19) + reelIndex * (isTurbo ? 2 : 1.5);
+  reelContainer.tiles = [];
+
+  const visibleTiles = 6;
+
+  for (let tileIndex = 0; tileIndex < visibleTiles; tileIndex += 1) {
+    const y = padding + (tileIndex - 1) * stepY;
+    const symbol = getRandomSymbol(symbols);
+
+    const tile = createSymbolTile(symbol, 0, y, tileWidth, tileHeight, {
+      isSpinning: true,
+      isDimmed: options.isDimmed,
+    });
+
+    reelContainer.tiles.push(tile);
+    reelContainer.addChild(tile);
+  }
+
+  reelsLayer.addChild(reelContainer);
+
+  return reelContainer;
+}
+
 function renderGridInternal(grid, options = {}) {
   if (!pixiApp || !reelsLayer || !grid) return;
+
+  stopSpinInternal();
 
   currentGrid = grid;
 
   clearLayer(reelsLayer);
 
-  const width = pixiApp.renderer.width;
-  const height = pixiApp.renderer.height;
-
-  const columns = grid.length;
-  const rows = grid[0]?.length || 3;
+  const layout = getLayout(grid);
+  const { width, height, columns, rows } = layout;
 
   if (!columns || !rows) return;
 
-  const padding = 10;
-  const columnGap = 8;
-  const rowGap = 8;
-
-  const tileWidth =
-    (width - padding * 2 - columnGap * (columns - 1)) / columns;
-  const tileHeight = (height - padding * 2 - rowGap * (rows - 1)) / rows;
-
-  const winningSet = getWinningPositionSet(options.winningPositions);
   const stoppedReels =
     typeof options.stoppedReels === "number" ? options.stoppedReels : columns;
 
-  const background = new Graphics();
-  background.roundRect(0, 0, width, height, 18);
-  background.fill({
-    color: 0x061127,
-    alpha: 0.96,
-  });
-  background.stroke({
-    width: 1,
-    color: 0x50cfff,
-    alpha: 0.28,
-  });
-  reelsLayer.addChild(background);
-
+  drawBackground(width, height);
   drawReelSeparators(reelsLayer, width, height, columns);
 
   grid.forEach((reel, reelIndex) => {
-    reel.forEach((symbol, rowIndex) => {
-      const x = padding + reelIndex * (tileWidth + columnGap);
-      const y = padding + rowIndex * (tileHeight + rowGap);
-
-      const isWinning = winningSet.has(`${reelIndex}:${rowIndex}`);
-      const isDimmed = options.dimUnstopped && reelIndex >= stoppedReels;
-
-      drawSymbolTile(reelsLayer, symbol, x, y, tileWidth, tileHeight, {
-        isWinning,
-        isDimmed,
-      });
+    drawStaticReel(reel, reelIndex, layout, {
+      winningPositions: options.winningPositions,
+      isDimmed: options.dimUnstopped && reelIndex >= stoppedReels,
     });
   });
 
   drawGlassOverlay(width, height);
 }
 
-function createRandomSymbol(symbols) {
-  return symbols[Math.floor(Math.random() * symbols.length)];
+function buildSpinningReels(symbols, options = {}) {
+  if (!pixiApp || !reelsLayer || !currentGrid) return;
+
+  clearLayer(reelsLayer);
+
+  const layout = getLayout(currentGrid);
+  const { width, height, columns } = layout;
+
+  drawBackground(width, height);
+  drawReelSeparators(reelsLayer, width, height, columns);
+
+  spinState.active = true;
+  spinState.symbols = symbols;
+  spinState.reels = [];
+  spinState.layout = layout;
+  spinState.isTurbo = Boolean(options.isTurbo);
+
+  for (let reelIndex = 0; reelIndex < columns; reelIndex += 1) {
+    const reelContainer = createSpinningReel(reelIndex, layout, symbols, {
+      isTurbo: spinState.isTurbo,
+    });
+
+    spinState.reels.push(reelContainer);
+  }
+
+  drawGlassOverlay(width, height);
+}
+
+function renderStoppingReelsInternal(finalGrid, options = {}) {
+  if (!pixiApp || !reelsLayer || !finalGrid) return;
+
+  currentGrid = finalGrid;
+
+  clearLayer(reelsLayer);
+
+  const layout = getLayout(finalGrid);
+  const { width, height, columns, rows } = layout;
+
+  if (!columns || !rows) return;
+
+  const stoppedReels = Math.max(
+    0,
+    Math.min(
+      columns,
+      typeof options.stoppedReels === "number" ? options.stoppedReels : 0,
+    ),
+  );
+
+  const symbols = options.symbols || spinState.symbols || [];
+  const isTurbo = Boolean(options.isTurbo);
+
+  drawBackground(width, height);
+  drawReelSeparators(reelsLayer, width, height, columns);
+
+  spinState.active = stoppedReels < columns;
+  spinState.symbols = symbols;
+  spinState.reels = [];
+  spinState.layout = layout;
+  spinState.isTurbo = isTurbo;
+
+  finalGrid.forEach((reel, reelIndex) => {
+    if (reelIndex < stoppedReels) {
+      drawStaticReel(reel, reelIndex, layout, {
+        winningPositions: [],
+      });
+      return;
+    }
+
+    const reelContainer = createSpinningReel(reelIndex, layout, symbols, {
+      isTurbo,
+      isDimmed: false,
+    });
+
+    spinState.reels.push(reelContainer);
+  });
+
+  drawGlassOverlay(width, height);
+
+  if (stoppedReels >= columns) {
+    stopSpinInternal();
+    renderGridInternal(finalGrid, {
+      winningPositions: options.winningPositions || [],
+    });
+  }
+}
+
+function updateSpinningReels(deltaTime) {
+  if (!spinState.active || !spinState.layout) return;
+
+  const { height, padding, tileHeight, stepY } = spinState.layout;
+  const maxY = height + tileHeight;
+  const minY = padding - stepY;
+
+  for (const reel of spinState.reels) {
+    for (const tile of reel.tiles) {
+      tile.y += reel.speed * deltaTime;
+
+      if (tile.y > maxY) {
+        let topTileY = Infinity;
+
+        for (const otherTile of reel.tiles) {
+          if (otherTile !== tile && otherTile.y < topTileY) {
+            topTileY = otherTile.y;
+          }
+        }
+
+        tile.y = Math.min(minY, topTileY - stepY);
+
+        const nextSymbol = getRandomSymbol(spinState.symbols);
+        tile.symbol = nextSymbol;
+
+        drawSymbolTileContent(
+          tile,
+          nextSymbol,
+          spinState.layout.tileWidth,
+          spinState.layout.tileHeight,
+          {
+            isSpinning: true,
+          },
+        );
+      }
+    }
+  }
+}
+
+function ensureTicker() {
+  if (!pixiApp || tickerReady) return;
+
+  pixiApp.ticker.add((ticker) => {
+    updateSpinningReels(ticker.deltaTime);
+  });
+
+  tickerReady = true;
 }
 
 export async function initPixiReels(options = {}) {
@@ -373,6 +598,8 @@ export async function initPixiReels(options = {}) {
 
     pixiApp.stage.addChild(reelsLayer);
     pixiApp.stage.addChild(overlayLayer);
+
+    ensureTicker();
   }
 
   if (pixiApp.canvas.parentElement !== container) {
@@ -387,6 +614,13 @@ export async function initPixiReels(options = {}) {
 
   resizeObserver = new ResizeObserver(() => {
     resizePixiReels();
+
+    if (spinState.active) {
+      buildSpinningReels(spinState.symbols, {
+        isTurbo: spinState.isTurbo,
+      });
+      return;
+    }
 
     if (currentGrid) {
       renderGridInternal(currentGrid, {
@@ -432,17 +666,22 @@ export function renderPixiReelsGrid(grid, options = {}) {
 export function renderPixiReelsSpinning(symbols, options = {}) {
   if (!isInitialized || !pixiApp || !currentGrid) return;
 
-  const columns = currentGrid.length || 5;
-  const rows = currentGrid[0]?.length || 3;
+  if (spinState.active) {
+    spinState.isTurbo = Boolean(options.isTurbo);
+    return;
+  }
 
-  const randomGrid = Array.from({ length: columns }, () =>
-    Array.from({ length: rows }, () => createRandomSymbol(symbols)),
-  );
+  buildSpinningReels(symbols, options);
+}
 
-  renderGridInternal(randomGrid, {
-    dimUnstopped: false,
-    ...options,
-  });
+export function renderPixiReelsStopping(finalGrid, options = {}) {
+  if (!isInitialized || !pixiApp || !finalGrid) return;
+
+  if (pixiApp.canvas.parentElement !== currentContainer) {
+    currentContainer.appendChild(pixiApp.canvas);
+  }
+
+  renderStoppingReelsInternal(finalGrid, options);
 }
 
 export function destroyPixiReels() {
@@ -450,6 +689,8 @@ export function destroyPixiReels() {
     resizeObserver.disconnect();
     resizeObserver = null;
   }
+
+  stopSpinInternal();
 
   if (pixiApp) {
     pixiApp.destroy(true, {
@@ -465,4 +706,5 @@ export function destroyPixiReels() {
   currentContainer = null;
   currentGrid = null;
   isInitialized = false;
+  tickerReady = false;
 }
