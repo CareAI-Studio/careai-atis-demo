@@ -19,8 +19,9 @@ export function createCodeInfoModal() {
 
         <p class="code-modal__text">
           Ukázkový frontend herní prototyp pro pozici Frontend Game Developer / PixiJS Developer.
-          Projekt kombinuje responzivní UI, herní logiku, DOM animaci válců, PixiJS canvas efektovou vrstvu,
-          backend API v Node.js / Express a bezpečný frontend fallback při nedostupném serveru.
+          Projekt kombinuje responzivní UI, herní logiku, stav aplikace, AUTO/TURBO režim,
+          25 výherních linií, backend API v Node.js / Express, bezpečný frontend fallback
+          a postupný přechod vizuální vrstvy z DOM/CSS do PixiJS canvasu.
         </p>
 
         <div class="code-modal__grid">
@@ -32,31 +33,37 @@ export function createCodeInfoModal() {
 
           <div class="code-modal__card">
             <h3>Herní automat</h3>
-            <p>SlotGame řeší vykreslení automatu, stav hry, kredity, sázku, výhru, spin, AUTO, TURBO a postupné zastavení válců.</p>
+            <p>SlotGame řeší hlavní stav hry, kredity, sázku, výhru, spin, AUTO, TURBO a napojení DOM i PixiJS rendereru.</p>
             <code>src/game/SlotGame.js</code>
           </div>
 
           <div class="code-modal__card">
+            <h3>PixiJS reel renderer</h3>
+            <p>Samostatný canvas renderer vykresluje válce, plynulé točení, zastavení zleva doprava, symboly, glass overlay a win highlight.</p>
+            <code>src/pixi-reels.js</code>
+          </div>
+
+          <div class="code-modal__card">
             <h3>PixiJS efekty</h3>
-            <p>Samostatná canvas vrstva přidává ambient glow, částice, win flash, jiskry a výherní feedback bez zásahu do DOM logiky.</p>
+            <p>Oddělená canvas vrstva přidává ambient glow, částice, win flash, burst efekt, jiskry a výherní feedback.</p>
             <code>src/pixi-effects.js</code>
           </div>
 
           <div class="code-modal__card">
-            <h3>Win feedback</h3>
-            <p>Při výhře se kombinuje PixiJS particle efekt s CSS animací frame, například krátký screen shake / win impact.</p>
-            <code>PixiJS + CSS animation</code>
+            <h3>Bezpečný canvas refaktor</h3>
+            <p>PixiJS byl přidaný postupně vedle existující DOM vrstvy. Herní logika zůstává stabilní a vizuální renderer se dá dál rozšiřovat.</p>
+            <code>DOM fallback + PixiJS layer</code>
           </div>
 
           <div class="code-modal__card">
             <h3>Backend spin API</h3>
-            <p>Spin volá backend endpoint, který vrací výslednou mřížku symbolů, výhru a informace o výherní linii.</p>
+            <p>Spin volá backend endpoint, který vrací výslednou mřížku symbolů, výhru, vítězný symbol a informace o výherních liniích.</p>
             <code>POST /api/game/spin</code>
           </div>
 
           <div class="code-modal__card">
             <h3>Fallback režim</h3>
-            <p>Když backend neběží, frontend zachytí chybu a použije lokální výpočet, takže demo zůstává funkční.</p>
+            <p>Když backend neběží, frontend zachytí chybu a použije lokální výpočet, takže demo zůstává funkční i bez serveru.</p>
             <code>src/api/gameApi.js</code>
           </div>
 
@@ -68,7 +75,7 @@ export function createCodeInfoModal() {
 
           <div class="code-modal__card">
             <h3>Herní logika</h3>
-            <p>Výpočet výhry, generování symbolů, paylines a formátování hodnot jsou oddělené od UI a efektové vrstvy.</p>
+            <p>Výpočet výhry, generování symbolů, paylines a formátování hodnot jsou oddělené od UI a vizuálních efektů.</p>
             <code>src/game/logic/</code>
           </div>
 
@@ -79,15 +86,21 @@ export function createCodeInfoModal() {
           </div>
 
           <div class="code-modal__card">
-            <h3>Reel strip animace</h3>
-            <p>Během spinu se každý sloupec vykreslí jako svislý pás symbolů a zastavuje se postupně zleva doprava.</p>
+            <h3>DOM reel fallback</h3>
+            <p>Původní DOM/CSS reel strip animace zůstává v projektu jako stabilní základ a fallback při postupném převodu do PixiJS.</p>
             <code>DOM / CSS animation</code>
           </div>
 
           <div class="code-modal__card">
-            <h3>Canvas-ready přístup</h3>
-            <p>PixiJS je přidaný bezpečně jako efektová vrstva. Další krok může být postupný převod válců do canvasu.</p>
-            <code>PixiJS foundation</code>
+            <h3>Win feedback</h3>
+            <p>Při výhře se kombinuje PixiJS particle efekt, výherní zvýraznění symbolů a CSS animace frame, například krátký screen shake.</p>
+            <code>PixiJS + CSS animation</code>
+          </div>
+
+          <div class="code-modal__card">
+            <h3>Blank symboly</h3>
+            <p>Non-paying symboly vyvažují četnost výher při 25 aktivních liniích a dělají demo uvěřitelnější.</p>
+            <code>src/game/gameConfig.js</code>
           </div>
 
           <div class="code-modal__card">
@@ -106,6 +119,7 @@ export function createCodeInfoModal() {
           <strong>Express</strong>
           <strong>25 Paylines</strong>
           <strong>API fallback</strong>
+          <strong>Canvas refactor</strong>
         </div>
       </div>
     </div>
