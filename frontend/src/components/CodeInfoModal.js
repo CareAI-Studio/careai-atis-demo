@@ -19,8 +19,8 @@ export function createCodeInfoModal() {
 
         <p class="code-modal__text">
           Ukázkový frontend herní prototyp pro pozici Frontend Game Developer / PixiJS Developer.
-          Projekt kombinuje responzivní UI, herní logiku, DOM animaci válců, backend API v Node.js / Express
-          a bezpečný frontend fallback při nedostupném serveru.
+          Projekt kombinuje responzivní UI, herní logiku, DOM animaci válců, PixiJS canvas efektovou vrstvu,
+          backend API v Node.js / Express a bezpečný frontend fallback při nedostupném serveru.
         </p>
 
         <div class="code-modal__grid">
@@ -32,8 +32,20 @@ export function createCodeInfoModal() {
 
           <div class="code-modal__card">
             <h3>Herní automat</h3>
-            <p>SlotGame řeší vykreslení automatu, stav hry, kredity, sázku, výhru, spin a postupné zastavení válců.</p>
+            <p>SlotGame řeší vykreslení automatu, stav hry, kredity, sázku, výhru, spin, AUTO, TURBO a postupné zastavení válců.</p>
             <code>src/game/SlotGame.js</code>
+          </div>
+
+          <div class="code-modal__card">
+            <h3>PixiJS efekty</h3>
+            <p>Samostatná canvas vrstva přidává ambient glow, částice, win flash, jiskry a výherní feedback bez zásahu do DOM logiky.</p>
+            <code>src/pixi-effects.js</code>
+          </div>
+
+          <div class="code-modal__card">
+            <h3>Win feedback</h3>
+            <p>Při výhře se kombinuje PixiJS particle efekt s CSS animací frame, například krátký screen shake / win impact.</p>
+            <code>PixiJS + CSS animation</code>
           </div>
 
           <div class="code-modal__card">
@@ -49,9 +61,21 @@ export function createCodeInfoModal() {
           </div>
 
           <div class="code-modal__card">
+            <h3>25 paylines</h3>
+            <p>Výhra se nepočítá jen na jedné prostřední linii. Demo používá 25 připravených payline patternů.</p>
+            <code>src/game/logic/paylines.js</code>
+          </div>
+
+          <div class="code-modal__card">
             <h3>Herní logika</h3>
-            <p>Výpočet výhry, generování symbolů a formátování hodnot jsou oddělené od UI vrstvy.</p>
+            <p>Výpočet výhry, generování symbolů, paylines a formátování hodnot jsou oddělené od UI a efektové vrstvy.</p>
             <code>src/game/logic/</code>
+          </div>
+
+          <div class="code-modal__card">
+            <h3>AUTO / TURBO</h3>
+            <p>AUTO spouští další spiny automaticky. TURBO zrychluje spin a zastavování válců bez změny výsledku hry.</p>
+            <code>frontend state / UX logic</code>
           </div>
 
           <div class="code-modal__card">
@@ -61,9 +85,9 @@ export function createCodeInfoModal() {
           </div>
 
           <div class="code-modal__card">
-            <h3>Další krok</h3>
-            <p>Současná DOM verze je připravená jako prototyp pro pozdější převod válců a efektů na PixiJS canvas.</p>
-            <code>PixiJS canvas ready</code>
+            <h3>Canvas-ready přístup</h3>
+            <p>PixiJS je přidaný bezpečně jako efektová vrstva. Další krok může být postupný převod válců do canvasu.</p>
+            <code>PixiJS foundation</code>
           </div>
 
           <div class="code-modal__card">
@@ -77,10 +101,11 @@ export function createCodeInfoModal() {
           <span>Stack:</span>
           <strong>Vite</strong>
           <strong>JavaScript</strong>
+          <strong>PixiJS</strong>
           <strong>Node.js</strong>
           <strong>Express</strong>
+          <strong>25 Paylines</strong>
           <strong>API fallback</strong>
-          <strong>PixiJS ready</strong>
         </div>
       </div>
     </div>
