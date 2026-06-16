@@ -2863,3 +2863,39 @@ body::before {
     filter: brightness(1);
   }
 }
+
+/* ================================
+   PixiJS reel renderer experiment
+   v1.3.0
+================================ */
+
+.slot-game__reels-wrap {
+  position: relative;
+}
+
+.slot-game__pixi-reels {
+  position: absolute;
+  top: 12px;
+  right: 52px;
+  bottom: 12px;
+  left: 52px;
+  z-index: 12;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 22px;
+}
+
+.pixi-reels-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.slot-game__frame.has-pixi-reels .slot-game__reels {
+  opacity: 0;
+}
+
+.slot-game__frame.has-pixi-reels .slot-game__pixi-reels {
+  opacity: 1;
+}

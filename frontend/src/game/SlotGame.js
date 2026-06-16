@@ -16,6 +16,11 @@ import { formatNumber } from "./logic/formatNumber.js";
 
 import { requestBackendSpin } from "../api/gameApi.js";
 import { initPixiEffects, playPixiWinEffect } from "../pixi-effects.js";
+import {
+  initPixiReels,
+  renderPixiReelsGrid,
+  renderPixiReelsSpinning,
+} from "../pixi-reels.js";
 
 const USE_BACKEND_SPIN = true;
 
@@ -45,6 +50,7 @@ export class SlotGame {
 
     this.reelTimers = [];
     this.autoSpinTimer = null;
+    this.pixiSpinTimer = null;
     this.elements = {};
   }
 
@@ -56,6 +62,7 @@ export class SlotGame {
     this.renderGrid(this.state.grid);
     this.updateUi();
     this.initPixiLayer();
+    this.initPixiReelsLayer();
   }
 
   initPixiLayer() {
@@ -67,6 +74,57 @@ export class SlotGame {
     });
 
     window.careAiPixiWin = playPixiWinEffect;
+  }
+
+  initPixiReelsLayer() {
+    if (!this.elements.pixiReels) return;
+
+    initPixiReels({
+      container: this.elements.pixiReels,
+      grid: this.state.grid,
+      winningPositions: [],
+    })
+      .then(() => {
+        this.elements.frame.classList.add("has-pixi-reels");
+      })
+      .catch((error) => {
+        console.warn("PixiJS reel renderer failed to initialize.", error);
+      });
+  }
+
+  renderPixiGrid(grid, options = {}) {
+    renderPixiReelsGrid(grid, {
+      winningPositions: this.state.winningResult?.winningPositions || [],
+      ...options,
+    });
+  }
+
+  clearPixiSpinTimer() {
+    if (this.pixiSpinTimer) {
+      window.clearInterval(this.pixiSpinTimer);
+      this.pixiSpinTimer = null;
+    }
+  }
+
+  renderPixiSpinning() {
+    renderPixiReelsSpinning(DEMO_SYMBOLS);
+  }
+
+  startPixiSpinLoop() {
+    this.clearPixiSpinTimer();
+
+    const frameDelay = this.state.isTurbo ? 55 : 90;
+
+    this.renderPixiSpinning();
+
+    this.pixiSpinTimer = window.setInterval(() => {
+      if (!this.state.isSpinning) {
+        this.clearPixiSpinTimer();
+        return;
+      }
+
+      this.renderPixiSpinning();
+    }, frameDelay);
   }
 
   playWinFeedback() {
@@ -133,6 +191,7 @@ export class SlotGame {
               </button>
 
               <div class="slot-game__reels" data-reels></div>
+              <div class="slot-game__pixi-reels" data-pixi-reels></div>
 
               <button type="button" class="slot-game__side-arrow slot-game__side-arrow--right" aria-label="Dekorativní pravá šipka">
                 ›
@@ -191,6 +250,7 @@ export class SlotGame {
 
   cacheElements() {
     this.elements.reels = this.rootElement.querySelector("[data-reels]");
+    this.elements.pixiReels = this.rootElement.querySelector("[data-pixi-reels]");
     this.elements.credits = this.rootElement.querySelector("[data-credits]");
     this.elements.bet = this.rootElement.querySelector("[data-bet]");
     this.elements.win = this.rootElement.querySelector("[data-win]");
@@ -491,6 +551,7 @@ export class SlotGame {
     });
 
     this.reelTimers = [];
+    this.clearPixiSpinTimer();
   }
 
   clearAutoSpinTimer() {
@@ -532,6 +593,8 @@ export class SlotGame {
       suppressWinHighlight: true,
     });
 
+    this.startPixiSpinLoop();
+
     const reelElements = Array.from(
       this.elements.reels.querySelectorAll(".slot-game__reel"),
     );
@@ -542,6 +605,8 @@ export class SlotGame {
   }
 
   async stopReelsOneByOne(finalGrid) {
+    this.clearPixiSpinTimer();
+
     const reelElements = Array.from(
       this.elements.reels.querySelectorAll(".slot-game__reel"),
     );
@@ -561,6 +626,13 @@ export class SlotGame {
 
       this.renderReelSymbols(reelElement, finalGrid[reelIndex], reelIndex, {
         suppressWinHighlight: true,
+      });
+
+      this.renderPixiGrid(finalGrid, {
+        suppressWinHighlight: true,
+        dimUnstopped: true,
+        stoppedReels: reelIndex + 1,
+        winningPositions: [],
       });
 
       const timerId = window.setTimeout(() => {
@@ -635,6 +707,9 @@ export class SlotGame {
     this.state.winningResult = winResult;
 
     this.renderGrid(finalGrid);
+    this.renderPixiGrid(finalGrid, {
+      winningPositions: winResult.winningPositions || [],
+    });
 
     if (winResult.payout > 0) {
       const winningLinesText = this.getWinningLinesText(winResult);
