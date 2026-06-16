@@ -1,6 +1,35 @@
+import { PAYLINES } from "./paylines.js";
+
+const BLANK_SYMBOL = {
+  id: "blank",
+  label: "",
+  className: "symbol--blank",
+  multiplier: 0,
+};
+
+const BLANK_SYMBOL_WEIGHT = 5;
+
+function createWeightedSymbolPool(symbols) {
+  const blankSymbols = Array.from(
+    { length: BLANK_SYMBOL_WEIGHT },
+    () => BLANK_SYMBOL,
+  );
+
+  return [...symbols, ...blankSymbols];
+}
+
 export function getRandomSymbol(symbols) {
-  const index = Math.floor(Math.random() * symbols.length);
-  return symbols[index];
+  const weightedSymbols = createWeightedSymbolPool(symbols);
+  const index = Math.floor(Math.random() * weightedSymbols.length);
+
+  return weightedSymbols[index];
+}
+
+export function getRandomPayingSymbol(symbols) {
+  const payingSymbols = symbols.filter((symbol) => symbol.multiplier > 0);
+  const index = Math.floor(Math.random() * payingSymbols.length);
+
+  return payingSymbols[index];
 }
 
 export function createRandomGrid(symbols, reelsCount = 5, rowsCount = 3) {
@@ -19,7 +48,7 @@ export function createRandomGrid(symbols, reelsCount = 5, rowsCount = 3) {
   return grid;
 }
 
-export function createDemoFinalGrid(symbols, winChance = 0.35) {
+export function createDemoFinalGrid(symbols, winChance = 0.04) {
   const grid = createRandomGrid(symbols);
   const shouldForceWin = Math.random() < winChance;
 
@@ -27,13 +56,16 @@ export function createDemoFinalGrid(symbols, winChance = 0.35) {
     return grid;
   }
 
-  const winningSymbol = getRandomSymbol(symbols);
+  const winningSymbol = getRandomPayingSymbol(symbols);
   const possibleStreaks = [3, 4, 5];
   const winningStreak =
     possibleStreaks[Math.floor(Math.random() * possibleStreaks.length)];
+  const winningPayline =
+    PAYLINES[Math.floor(Math.random() * PAYLINES.length)];
 
   for (let reelIndex = 0; reelIndex < winningStreak; reelIndex += 1) {
-    grid[reelIndex][1] = winningSymbol;
+    const rowIndex = winningPayline.rows[reelIndex];
+    grid[reelIndex][rowIndex] = winningSymbol;
   }
 
   return grid;

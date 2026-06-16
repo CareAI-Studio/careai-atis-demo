@@ -39,7 +39,7 @@ export class SlotGame {
       isAuto: false,
       grid: [],
       winningResult: null,
-      status: "Připraveno ke hře. Výhra se počítá na prostřední linii.",
+      status: "Připraveno ke hře. Výhra se počítá na 25 liniích.",
     };
 
     this.reelTimers = [];
@@ -223,9 +223,6 @@ export class SlotGame {
 
   renderReelSymbols(reelElement, reel, reelIndex, options = {}) {
     const { suppressWinHighlight = false } = options;
-    const winningIndexes = suppressWinHighlight
-      ? []
-      : this.getWinningMiddleIndexes();
 
     reelElement.innerHTML = "";
 
@@ -233,7 +230,7 @@ export class SlotGame {
       const symbolElement = this.createSymbolElement(symbol);
 
       const isWinningSymbol =
-        rowIndex === 1 && winningIndexes.includes(reelIndex);
+        !suppressWinHighlight && this.isWinningPosition(reelIndex, rowIndex);
 
       if (isWinningSymbol) {
         symbolElement.classList.add("slot-game__symbol--win");
@@ -293,14 +290,13 @@ export class SlotGame {
     reelElement.append(stripElement);
   }
 
-  getWinningMiddleIndexes() {
-    const result = this.state.winningResult;
+  isWinningPosition(reelIndex, rowIndex) {
+    const positions = this.state.winningResult?.winningPositions || [];
 
-    if (!result || result.payout <= 0 || result.winningStreak < 3) {
-      return [];
-    }
-
-    return Array.from({ length: result.winningStreak }, (_, index) => index);
+    return positions.some(
+      (position) =>
+        position.reelIndex === reelIndex && position.rowIndex === rowIndex,
+    );
   }
 
   getSpinDuration() {
@@ -413,7 +409,7 @@ export class SlotGame {
 
   async getFinalSpinGrid() {
     if (!USE_BACKEND_SPIN) {
-      const localGrid = createDemoFinalGrid(DEMO_SYMBOLS, 0.28);
+      const localGrid = createDemoFinalGrid(DEMO_SYMBOLS, 0.08);
       const localWinResult = calculateWin(localGrid, this.state.bet);
 
       return {
@@ -436,7 +432,7 @@ export class SlotGame {
     } catch (error) {
       console.warn("Backend spin failed, using local frontend spin.", error);
 
-      const fallbackGrid = createDemoFinalGrid(DEMO_SYMBOLS, 0.28);
+      const fallbackGrid = createDemoFinalGrid(DEMO_SYMBOLS, 0.08);
       const fallbackWinResult = calculateWin(fallbackGrid, this.state.bet);
 
       return {
@@ -543,6 +539,16 @@ export class SlotGame {
     this.clearReelTimers();
   }
 
+  getWinningLinesText(winResult) {
+    const winningLinesCount = winResult.winningLines?.length || 1;
+
+    if (winningLinesCount > 1) {
+      return `${winningLinesCount} výherních liniích`;
+    }
+
+    return winResult.winningLineLabel || "výherní linii";
+  }
+
   async spin(options = {}) {
     const { triggeredByAuto = false } = options;
 
@@ -597,9 +603,11 @@ export class SlotGame {
     this.renderGrid(finalGrid);
 
     if (winResult.payout > 0) {
-      this.state.status = `Výhra ${formatNumber(winResult.payout)} kreditů. Symbol ${winResult.winningSymbol.label} × ${winResult.winningStreak} na prostřední linii. Výsledek připravilo ${resultSourceLabel}.`;
+      const winningLinesText = this.getWinningLinesText(winResult);
+
+      this.state.status = `Výhra ${formatNumber(winResult.payout)} kreditů. Symbol ${winResult.winningSymbol.label} × ${winResult.winningStreak} na ${winningLinesText}. Výsledek připravilo ${resultSourceLabel}.`;
     } else {
-      this.state.status = `Tentokrát bez výhry. Zkus další spin. Výsledek připravilo ${resultSourceLabel}.`;
+      this.state.status = `Tentokrát bez výhry na 25 liniích. Zkus další spin. Výsledek připravilo ${resultSourceLabel}.`;
     }
 
     if (this.state.isAuto) {
