@@ -105,7 +105,7 @@ function createSymbolText(label, width, height, isBlank = false) {
     text: label,
     style: {
       fontFamily: "Arial, sans-serif",
-      fontSize: Math.max(24, Math.min(width, height) * 0.38),
+      fontSize: Math.max(22, Math.min(width, height) * 0.34),
       fontWeight: "900",
       fill: isBlank ? 0x405a82 : 0xffffff,
       align: "center",
@@ -125,10 +125,369 @@ function createSymbolText(label, width, height, isBlank = false) {
   return text;
 }
 
+function drawStarGlyph(parent, width, height, color, glowColor) {
+  const cx = width / 2;
+  const cy = height / 2;
+  const outerRadius = Math.min(width, height) * 0.24;
+  const innerRadius = outerRadius * 0.46;
+  const points = [];
+
+  for (let index = 0; index < 10; index += 1) {
+    const radius = index % 2 === 0 ? outerRadius : innerRadius;
+    const angle = -Math.PI / 2 + (index * Math.PI) / 5;
+
+    points.push({
+      x: cx + Math.cos(angle) * radius,
+      y: cy + Math.sin(angle) * radius,
+    });
+  }
+
+  const glow = new Graphics();
+  glow.circle(cx, cy, outerRadius * 1.45);
+  glow.fill({
+    color: glowColor,
+    alpha: 0.18,
+  });
+  parent.addChild(glow);
+
+  const star = new Graphics();
+  star.moveTo(points[0].x, points[0].y);
+
+  for (let index = 1; index < points.length; index += 1) {
+    star.lineTo(points[index].x, points[index].y);
+  }
+
+  star.closePath();
+  star.fill({
+    color,
+    alpha: 1,
+  });
+  star.stroke({
+    width: 2,
+    color: 0xffffff,
+    alpha: 0.35,
+  });
+
+  parent.addChild(star);
+}
+
+function drawDiamondGlyph(parent, width, height, color, glowColor) {
+  const cx = width / 2;
+  const cy = height / 2;
+  const size = Math.min(width, height) * 0.27;
+
+  const glow = new Graphics();
+  glow.circle(cx, cy, size * 1.35);
+  glow.fill({
+    color: glowColor,
+    alpha: 0.18,
+  });
+  parent.addChild(glow);
+
+  const diamond = new Graphics();
+  diamond.moveTo(cx, cy - size);
+  diamond.lineTo(cx + size * 0.95, cy);
+  diamond.lineTo(cx, cy + size);
+  diamond.lineTo(cx - size * 0.95, cy);
+  diamond.closePath();
+  diamond.fill({
+    color,
+    alpha: 1,
+  });
+  diamond.stroke({
+    width: 2,
+    color: 0xffffff,
+    alpha: 0.32,
+  });
+  parent.addChild(diamond);
+
+  const shine = new Graphics();
+  shine.moveTo(cx, cy - size * 0.72);
+  shine.lineTo(cx + size * 0.36, cy - size * 0.08);
+  shine.lineTo(cx, cy + size * 0.14);
+  shine.lineTo(cx - size * 0.32, cy - size * 0.08);
+  shine.closePath();
+  shine.fill({
+    color: 0xffffff,
+    alpha: 0.18,
+  });
+  parent.addChild(shine);
+}
+
+function drawLightningGlyph(parent, width, height, color, glowColor) {
+  const cx = width / 2;
+  const cy = height / 2;
+  const size = Math.min(width, height) * 0.31;
+
+  const glow = new Graphics();
+  glow.circle(cx, cy, size * 1.25);
+  glow.fill({
+    color: glowColor,
+    alpha: 0.18,
+  });
+  parent.addChild(glow);
+
+  const bolt = new Graphics();
+  bolt.moveTo(cx + size * 0.08, cy - size);
+  bolt.lineTo(cx - size * 0.46, cy + size * 0.08);
+  bolt.lineTo(cx - size * 0.08, cy + size * 0.08);
+  bolt.lineTo(cx - size * 0.22, cy + size);
+  bolt.lineTo(cx + size * 0.5, cy - size * 0.2);
+  bolt.lineTo(cx + size * 0.12, cy - size * 0.2);
+  bolt.closePath();
+  bolt.fill({
+    color,
+    alpha: 1,
+  });
+  bolt.stroke({
+    width: 2,
+    color: 0xffffff,
+    alpha: 0.25,
+  });
+  parent.addChild(bolt);
+}
+
+function drawHeartGlyph(parent, width, height, color, glowColor) {
+  const cx = width / 2;
+  const cy = height / 2;
+  const size = Math.min(width, height) * 0.22;
+
+  const glow = new Graphics();
+  glow.circle(cx, cy, size * 1.75);
+  glow.fill({
+    color: glowColor,
+    alpha: 0.18,
+  });
+  parent.addChild(glow);
+
+  const heart = new Graphics();
+  heart.moveTo(cx, cy + size * 0.72);
+  heart.bezierCurveTo(
+    cx - size * 1.35,
+    cy - size * 0.25,
+    cx - size * 0.72,
+    cy - size * 1.25,
+    cx,
+    cy - size * 0.48,
+  );
+  heart.bezierCurveTo(
+    cx + size * 0.72,
+    cy - size * 1.25,
+    cx + size * 1.35,
+    cy - size * 0.25,
+    cx,
+    cy + size * 0.72,
+  );
+  heart.fill({
+    color,
+    alpha: 1,
+  });
+  heart.stroke({
+    width: 2,
+    color: 0xffffff,
+    alpha: 0.28,
+  });
+  parent.addChild(heart);
+}
+
+function drawCloudGlyph(parent, width, height, color, glowColor) {
+  const cx = width / 2;
+  const cy = height / 2;
+  const size = Math.min(width, height) * 0.2;
+
+  const glow = new Graphics();
+  glow.ellipse(cx, cy, size * 1.8, size * 1.1);
+  glow.fill({
+    color: glowColor,
+    alpha: 0.16,
+  });
+  parent.addChild(glow);
+
+  const cloud = new Graphics();
+  cloud.circle(cx - size * 0.7, cy + size * 0.12, size * 0.72);
+  cloud.circle(cx, cy - size * 0.16, size);
+  cloud.circle(cx + size * 0.78, cy + size * 0.08, size * 0.74);
+  cloud.roundRect(cx - size * 1.48, cy, size * 2.96, size * 0.8, size * 0.34);
+  cloud.fill({
+    color,
+    alpha: 0.94,
+  });
+  cloud.stroke({
+    width: 2,
+    color: 0xffffff,
+    alpha: 0.25,
+  });
+  parent.addChild(cloud);
+}
+
+function drawRobotGlyph(parent, width, height, color, glowColor, accentColor) {
+  const cx = width / 2;
+  const cy = height / 2;
+  const size = Math.min(width, height) * 0.27;
+
+  const glow = new Graphics();
+  glow.circle(cx, cy, size * 1.48);
+  glow.fill({
+    color: glowColor,
+    alpha: 0.19,
+  });
+  parent.addChild(glow);
+
+  const antenna = new Graphics();
+  antenna.rect(cx - 1, cy - size * 1.45, 2, size * 0.32);
+  antenna.circle(cx, cy - size * 1.52, 4);
+  antenna.fill({
+    color: accentColor,
+    alpha: 1,
+  });
+  parent.addChild(antenna);
+
+  const head = new Graphics();
+  head.roundRect(cx - size, cy - size * 0.88, size * 2, size * 1.7, 10);
+  head.fill({
+    color,
+    alpha: 1,
+  });
+  head.stroke({
+    width: 2,
+    color: 0xffffff,
+    alpha: 0.3,
+  });
+  parent.addChild(head);
+
+  const visor = new Graphics();
+  visor.roundRect(cx - size * 0.66, cy - size * 0.42, size * 1.32, size * 0.48, 8);
+  visor.fill({
+    color: 0x0d1a38,
+    alpha: 0.78,
+  });
+  parent.addChild(visor);
+
+  const eyeLeft = new Graphics();
+  eyeLeft.circle(cx - size * 0.34, cy - size * 0.17, 3.8);
+  eyeLeft.fill({
+    color: 0x60d7ff,
+    alpha: 1,
+  });
+  parent.addChild(eyeLeft);
+
+  const eyeRight = new Graphics();
+  eyeRight.circle(cx + size * 0.34, cy - size * 0.17, 3.8);
+  eyeRight.fill({
+    color: 0xff5bd6,
+    alpha: 1,
+  });
+  parent.addChild(eyeRight);
+
+  const mouth = new Graphics();
+  mouth.roundRect(cx - size * 0.36, cy + size * 0.36, size * 0.72, 3, 2);
+  mouth.fill({
+    color: 0xffffff,
+    alpha: 0.45,
+  });
+  parent.addChild(mouth);
+}
+
+function drawAiGlyph(parent, width, height, color, glowColor) {
+  const cx = width / 2;
+  const cy = height / 2;
+
+  const glow = new Graphics();
+  glow.ellipse(cx, cy, width * 0.3, height * 0.22);
+  glow.fill({
+    color: glowColor,
+    alpha: 0.18,
+  });
+  parent.addChild(glow);
+
+  const text = new Text({
+    text: "AI",
+    style: {
+      fontFamily: "Arial, sans-serif",
+      fontSize: Math.max(28, Math.min(width, height) * 0.4),
+      fontWeight: "900",
+      fill: color,
+      align: "center",
+      dropShadow: {
+        color: 0x000000,
+        blur: 8,
+        distance: 3,
+        alpha: 0.8,
+      },
+    },
+  });
+
+  text.anchor.set(0.5);
+  text.x = cx;
+  text.y = cy;
+
+  parent.addChild(text);
+}
+
+function drawSymbolGlyph(parent, symbol, width, height, symbolStyle) {
+  const label = getSymbolLabel(symbol);
+
+  if (symbolStyle.isBlank) {
+    const ghost = new Graphics();
+    ghost.ellipse(width / 2, height / 2, width * 0.28, height * 0.2);
+    ghost.fill({
+      color: 0x1a2e52,
+      alpha: 0.35,
+    });
+    parent.addChild(ghost);
+    return;
+  }
+
+  if (label === "AI") {
+    drawAiGlyph(parent, width, height, symbolStyle.fill, symbolStyle.glow);
+    return;
+  }
+
+  if (label === "⭐") {
+    drawStarGlyph(parent, width, height, symbolStyle.fill, symbolStyle.glow);
+    return;
+  }
+
+  if (label === "💎") {
+    drawDiamondGlyph(parent, width, height, symbolStyle.fill, symbolStyle.glow);
+    return;
+  }
+
+  if (label === "⚡") {
+    drawLightningGlyph(parent, width, height, symbolStyle.fill, symbolStyle.glow);
+    return;
+  }
+
+  if (label === "♡") {
+    drawHeartGlyph(parent, width, height, symbolStyle.fill, symbolStyle.glow);
+    return;
+  }
+
+  if (label === "☁") {
+    drawCloudGlyph(parent, width, height, symbolStyle.fill, symbolStyle.glow);
+    return;
+  }
+
+  if (label === "🤖") {
+    drawRobotGlyph(
+      parent,
+      width,
+      height,
+      symbolStyle.fill,
+      symbolStyle.glow,
+      symbolStyle.accent,
+    );
+    return;
+  }
+
+  const text = createSymbolText(label, width, height, symbolStyle.isBlank);
+  text.tint = symbolStyle.fill;
+  parent.addChild(text);
+}
+
 function drawSymbolTileContent(tile, symbol, width, height, options = {}) {
   const { isWinning = false, isDimmed = false, isSpinning = false } = options;
   const symbolStyle = getSymbolStyle(symbol);
-  const label = getSymbolLabel(symbol);
 
   clearLayer(tile);
 
@@ -138,59 +497,92 @@ function drawSymbolTileContent(tile, symbol, width, height, options = {}) {
 
   base.roundRect(0, 0, width, height, 14);
   base.fill({
-    color: symbolStyle.isBlank ? 0x071126 : 0x142856,
-    alpha: symbolStyle.isBlank ? 0.72 : 0.92,
-  });
-
-  base.roundRect(4, 4, width - 8, height - 8, 12);
-  base.stroke({
-    width: isWinning ? 2 : 1,
-    color: isWinning ? 0xffd76a : 0x2e6da8,
-    alpha: isWinning ? 0.95 : 0.34,
+    color: symbolStyle.isBlank ? 0x071126 : 0x12254f,
+    alpha: symbolStyle.isBlank ? 0.72 : 0.94,
   });
 
   tile.addChild(base);
 
+  const depth = new Graphics();
+  depth.roundRect(4, 4, width - 8, height - 8, 12);
+  depth.fill({
+    color: 0x000000,
+    alpha: symbolStyle.isBlank ? 0.1 : 0.06,
+  });
+  depth.stroke({
+    width: isWinning ? 2 : 1,
+    color: isWinning ? 0xffd76a : 0x2e6da8,
+    alpha: isWinning ? 0.98 : 0.32,
+  });
+  tile.addChild(depth);
+
   const innerGlow = new Graphics();
-  innerGlow.ellipse(width * 0.5, height * 0.5, width * 0.42, height * 0.36);
+  innerGlow.ellipse(width * 0.5, height * 0.52, width * 0.42, height * 0.36);
   innerGlow.fill({
     color: isWinning ? 0xffd76a : symbolStyle.glow,
-    alpha: isWinning ? 0.25 : symbolStyle.isBlank ? 0.06 : 0.16,
+    alpha: isWinning ? 0.25 : symbolStyle.isBlank ? 0.06 : 0.14,
   });
   tile.addChild(innerGlow);
 
+  const bottomShade = new Graphics();
+  bottomShade.roundRect(6, height * 0.56, width - 12, height * 0.34, 10);
+  bottomShade.fill({
+    color: 0x000000,
+    alpha: 0.13,
+  });
+  tile.addChild(bottomShade);
+
   const topShine = new Graphics();
-  topShine.roundRect(8, 7, width - 16, height * 0.28, 11);
+  topShine.roundRect(7, 7, width - 14, height * 0.3, 12);
   topShine.fill({
     color: 0xffffff,
-    alpha: symbolStyle.isBlank ? 0.035 : 0.09,
+    alpha: symbolStyle.isBlank ? 0.035 : 0.105,
   });
   tile.addChild(topShine);
+
+  const glyphLayer = new Container();
+  glyphLayer.x = 0;
+  glyphLayer.y = 0;
+  tile.addChild(glyphLayer);
+
+  drawSymbolGlyph(glyphLayer, symbol, width, height, symbolStyle);
 
   if (isSpinning) {
     const motionShade = new Graphics();
     motionShade.rect(0, 0, width, height);
     motionShade.fill({
       color: 0x000000,
-      alpha: 0.1,
+      alpha: 0.08,
     });
     tile.addChild(motionShade);
+
+    const motionLine = new Graphics();
+    motionLine.rect(8, height * 0.5, width - 16, 2);
+    motionLine.fill({
+      color: 0xffffff,
+      alpha: 0.08,
+    });
+    tile.addChild(motionLine);
   }
 
   if (isWinning) {
-    const winRing = new Graphics();
-    winRing.roundRect(2, 2, width - 4, height - 4, 14);
-    winRing.stroke({
-      width: 2,
+    const winGlow = new Graphics();
+    winGlow.roundRect(-2, -2, width + 4, height + 4, 16);
+    winGlow.stroke({
+      width: 3,
       color: 0xffd76a,
       alpha: 0.95,
     });
-    tile.addChild(winRing);
-  }
+    tile.addChild(winGlow);
 
-  const text = createSymbolText(label, width, height, symbolStyle.isBlank);
-  text.tint = symbolStyle.isBlank ? 0x405a82 : symbolStyle.fill;
-  tile.addChild(text);
+    const winWash = new Graphics();
+    winWash.ellipse(width / 2, height / 2, width * 0.44, height * 0.38);
+    winWash.fill({
+      color: 0xffd76a,
+      alpha: 0.12,
+    });
+    tile.addChild(winWash);
+  }
 }
 
 function createSymbolTile(symbol, x, y, width, height, options = {}) {
