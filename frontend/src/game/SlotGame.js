@@ -23,6 +23,18 @@ import {
   renderPixiReelsStopping,
 } from "../pixi-reels.js";
 
+import {
+  unlockAudio,
+  setSoundEnabled,
+  isSoundEnabled,
+  playButtonSound,
+  playSpinStartSound,
+  playReelStopSound,
+  playSmallWinSound,
+  playBigWinSound,
+  playNoCreditSound,
+} from "../audio/soundManager.js";
+
 const USE_BACKEND_SPIN = true;
 
 const NORMAL_REEL_STOP_DELAY = 320;
@@ -32,6 +44,30 @@ const TURBO_REEL_STOP_BOUNCE_TIME = 260;
 const TURBO_SPIN_DURATION = Math.max(450, Math.round(SPIN_DURATION * 0.45));
 const AUTO_SPIN_DELAY = 650;
 const STRIP_SYMBOL_COUNT = 18;
+const SOUND_STORAGE_KEY = "careai_slot_sound_enabled";
+
+function getInitialSoundEnabled() {
+  try {
+    const storedValue = window.localStorage.getItem(SOUND_STORAGE_KEY);
+
+    if (storedValue === null) {
+      return true;
+    }
+
+    return storedValue === "true";
+  } catch (error) {
+    console.warn("Sound preference could not be loaded.", error);
+    return true;
+  }
+}
+
+function saveSoundEnabledPreference(enabled) {
+  try {
+    window.localStorage.setItem(SOUND_STORAGE_KEY, String(enabled));
+  } catch (error) {
+    console.warn("Sound preference could not be saved.", error);
+  }
+}
 
 export class SlotGame {
   constructor(rootElement) {
@@ -44,6 +80,7 @@ export class SlotGame {
       isSpinning: false,
       isTurbo: false,
       isAuto: false,
+      soundEnabled: getInitialSoundEnabled(),
       grid: [],
       winningResult: null,
       status: "Připraveno ke hře. Výhra se počítá na 25 liniích.",
@@ -56,6 +93,8 @@ export class SlotGame {
   }
 
   mount() {
+    setSoundEnabled(this.state.soundEnabled);
+
     this.state.grid = createRandomGrid(DEMO_SYMBOLS);
     this.renderShell();
     this.cacheElements();
@@ -160,8 +199,9 @@ export class SlotGame {
         <div class="slot-game__frame">
           <div class="pixi-effects-layer" data-pixi-effects-layer></div>
 
-          <div class="slot-game__top">
+          <div class="slot-game__header">
             <div class="slot-game__mode">DEMO REŽIM</div>
+
             <div class="slot-game__title">
               <span class="slot-game__title-mark">✦</span>
               <span>CAREAI SLOT</span>
@@ -172,7 +212,10 @@ export class SlotGame {
           <div class="slot-game__premium-bar">
             <div class="slot-game__info-panel slot-game__info-panel--credits">
               <span class="slot-game__info-label">KREDITY</span>
-              <strong data-credits>0</strong>
+              <div class="slot-game__info-value-row">
+                <span class="slot-game__info-icon" aria-hidden="true">🪙</span>
+                <strong data-credits>0</strong>
+              </div>
             </div>
 
             <div class="slot-game__premium-brand">
@@ -183,9 +226,9 @@ export class SlotGame {
             <div class="slot-game__bet-box">
               <span class="slot-game__info-label">SÁZKA</span>
               <div class="slot-game__bet-controls">
-                <button type="button" class="slot-game__small-btn" data-action="decrease-bet">−</button>
+                <button type="button" class="slot-game__small-btn" data-action="decrease-bet" aria-label="Snížit sázku">−</button>
                 <strong data-bet>0</strong>
-                <button type="button" class="slot-game__small-btn" data-action="increase-bet">+</button>
+                <button type="button" class="slot-game__small-btn" data-action="increase-bet" aria-label="Zvýšit sázku">+</button>
               </div>
             </div>
           </div>
@@ -215,39 +258,55 @@ export class SlotGame {
             </div>
           </div>
 
-          <div class="slot-game__premium-controls">
-            <button
-              type="button"
-              class="slot-game__feature-btn"
-              data-action="toggle-turbo"
-              aria-label="Zapnout nebo vypnout Turbo režim"
-              aria-pressed="false"
-            >
-              ⚡ TURBO
-            </button>
+          <div class="slot-game__premium-controls slot-game__premium-controls--balanced">
+            <div class="slot-game__control-group slot-game__control-group--left">
+              <button
+                type="button"
+                class="slot-game__feature-btn"
+                data-action="toggle-turbo"
+                aria-label="Zapnout nebo vypnout Turbo režim"
+                aria-pressed="false"
+              >
+                <span aria-hidden="true">⚡</span>
+                <span>TURBO</span>
+              </button>
 
-            <button
-              type="button"
-              class="slot-game__feature-btn"
-              data-action="toggle-auto"
-              aria-label="Zapnout nebo vypnout automatické spiny"
-              aria-pressed="false"
-            >
-              ↻ AUTO
-            </button>
+              <button
+                type="button"
+                class="slot-game__feature-btn"
+                data-action="toggle-auto"
+                aria-label="Zapnout nebo vypnout automatické spiny"
+                aria-pressed="false"
+              >
+                <span aria-hidden="true">↻</span>
+                <span>AUTO</span>
+              </button>
+
+              <button
+                type="button"
+                class="slot-game__feature-btn"
+                data-action="toggle-sound"
+                aria-label="Zapnout nebo vypnout zvuky"
+                aria-pressed="true"
+              >
+                🔊 SOUND
+              </button>
+            </div>
 
             <button type="button" class="slot-game__spin-btn" data-action="spin" aria-label="Spustit spin">
               <span class="slot-game__spin-icon">↻</span>
               <span class="slot-game__spin-text">SPIN</span>
             </button>
 
-            <button type="button" class="slot-game__max-btn" data-action="max-bet">
-              MAX BET
-            </button>
+            <div class="slot-game__control-group slot-game__control-group--right">
+              <button type="button" class="slot-game__max-btn" data-action="max-bet">
+                MAX BET
+              </button>
 
-            <div class="slot-game__info-panel slot-game__info-panel--win">
-              <span class="slot-game__info-label">VÝHRA</span>
-              <strong data-win>0</strong>
+              <div class="slot-game__info-panel slot-game__info-panel--win">
+                <span class="slot-game__info-label">VÝHRA</span>
+                <strong data-win>0</strong>
+              </div>
             </div>
           </div>
 
@@ -285,24 +344,58 @@ export class SlotGame {
     this.elements.autoButton = this.rootElement.querySelector(
       '[data-action="toggle-auto"]',
     );
+    this.elements.soundButton = this.rootElement.querySelector(
+      '[data-action="toggle-sound"]',
+    );
     this.elements.frame = this.rootElement.querySelector(".slot-game__frame");
   }
 
   bindEvents() {
-    this.elements.spinButton.addEventListener("click", () => this.spin());
-    this.elements.maxBetButton.addEventListener("click", () =>
-      this.setMaxBet(),
-    );
-    this.elements.decreaseBetButton.addEventListener("click", () =>
-      this.changeBet(-10),
-    );
-    this.elements.increaseBetButton.addEventListener("click", () =>
-      this.changeBet(10),
-    );
-    this.elements.turboButton.addEventListener("click", () =>
-      this.toggleTurbo(),
-    );
-    this.elements.autoButton.addEventListener("click", () => this.toggleAuto());
+    this.elements.spinButton.addEventListener("click", async () => {
+      await unlockAudio();
+      playButtonSound();
+      this.spin();
+    });
+
+    this.elements.maxBetButton.addEventListener("click", async () => {
+      await unlockAudio();
+      playButtonSound();
+      this.setMaxBet();
+    });
+
+    this.elements.decreaseBetButton.addEventListener("click", async () => {
+      await unlockAudio();
+      playButtonSound();
+      this.changeBet(-10);
+    });
+
+    this.elements.increaseBetButton.addEventListener("click", async () => {
+      await unlockAudio();
+      playButtonSound();
+      this.changeBet(10);
+    });
+
+    this.elements.turboButton.addEventListener("click", async () => {
+      await unlockAudio();
+      playButtonSound();
+      this.toggleTurbo();
+    });
+
+    this.elements.autoButton.addEventListener("click", async () => {
+      await unlockAudio();
+      playButtonSound();
+      this.toggleAuto();
+    });
+
+    this.elements.soundButton.addEventListener("click", async () => {
+      await unlockAudio();
+
+      if (isSoundEnabled()) {
+        playButtonSound();
+      }
+
+      this.toggleSound();
+    });
   }
 
   renderGrid(grid, options = {}) {
@@ -438,6 +531,10 @@ export class SlotGame {
       "slot-game__feature-btn--active",
       this.state.isAuto,
     );
+    this.elements.soundButton.classList.toggle(
+      "slot-game__feature-btn--active",
+      this.state.soundEnabled,
+    );
 
     this.elements.turboButton.setAttribute(
       "aria-pressed",
@@ -447,6 +544,14 @@ export class SlotGame {
       "aria-pressed",
       String(this.state.isAuto),
     );
+    this.elements.soundButton.setAttribute(
+      "aria-pressed",
+      String(this.state.soundEnabled),
+    );
+
+    this.elements.soundButton.textContent = this.state.soundEnabled
+      ? "🔊 SOUND"
+      : "🔇 MUTED";
 
     this.elements.frame.classList.toggle("is-spinning", this.state.isSpinning);
     this.elements.frame.classList.toggle("is-turbo", this.state.isTurbo);
@@ -491,6 +596,8 @@ export class SlotGame {
 
     if (this.state.isAuto) {
       if (this.state.credits < this.state.bet) {
+        playNoCreditSound();
+
         this.state.isAuto = false;
         this.state.status =
           "AUTO nelze zapnout. Nemáš dostatek kreditů pro další spin.";
@@ -510,6 +617,19 @@ export class SlotGame {
     }
 
     this.state.status = "AUTO režim vypnutý.";
+    this.updateUi();
+  }
+
+  toggleSound() {
+    this.state.soundEnabled = !this.state.soundEnabled;
+
+    setSoundEnabled(this.state.soundEnabled);
+    saveSoundEnabledPreference(this.state.soundEnabled);
+
+    this.state.status = this.state.soundEnabled
+      ? "Zvuky zapnuté."
+      : "Zvuky vypnuté.";
+
     this.updateUi();
   }
 
@@ -599,6 +719,7 @@ export class SlotGame {
 
   startReelAnimation() {
     this.clearReelTimers();
+    playSpinStartSound();
 
     const initialGrid = createRandomGrid(DEMO_SYMBOLS);
     this.renderGrid(initialGrid, {
@@ -639,6 +760,8 @@ export class SlotGame {
           suppressWinHighlight: true,
         });
 
+        playReelStopSound(reelIndex);
+
         const timerId = window.setTimeout(() => {
           reelElement.classList.remove("slot-game__reel--stopping");
         }, reelStopBounceTime);
@@ -674,6 +797,8 @@ export class SlotGame {
     }
 
     if (this.state.credits < this.state.bet) {
+      playNoCreditSound();
+
       this.state.isAuto = false;
       this.state.status =
         "Nedostatek kreditů. Sniž sázku nebo obnov hru. AUTO režim byl vypnutý.";
@@ -720,6 +845,12 @@ export class SlotGame {
 
     if (winResult.payout > 0) {
       const winningLinesText = this.getWinningLinesText(winResult);
+
+      if (winResult.payout >= this.state.bet * 10) {
+        playBigWinSound();
+      } else {
+        playSmallWinSound();
+      }
 
       this.playWinFeedback();
 
