@@ -195,7 +195,15 @@ function drawStarGlyph(parent, width, height, color, glowColor) {
   const innerRadius = outerRadius * 0.46;
   const points = [];
 
-  drawGlyphGlow(parent, cx, cy, outerRadius * 1.55, outerRadius * 1.28, glowColor, 0.18);
+  drawGlyphGlow(
+    parent,
+    cx,
+    cy,
+    outerRadius * 1.55,
+    outerRadius * 1.28,
+    glowColor,
+    0.18,
+  );
 
   for (let index = 0; index < 10; index += 1) {
     const radius = index % 2 === 0 ? outerRadius : innerRadius;
@@ -442,7 +450,13 @@ function drawRobotGlyph(parent, width, height, color, glowColor, accentColor) {
   drawGlyphGlow(parent, cx, cy, size * 1.56, size * 1.42, glowColor, 0.19);
 
   const shadow = new Graphics();
-  shadow.roundRect(cx - size + 2, cy - size * 0.88 + 3, size * 2, size * 1.7, 10);
+  shadow.roundRect(
+    cx - size + 2,
+    cy - size * 0.88 + 3,
+    size * 2,
+    size * 1.7,
+    10,
+  );
   shadow.fill({
     color: 0x000000,
     alpha: 0.2,
@@ -472,7 +486,13 @@ function drawRobotGlyph(parent, width, height, color, glowColor, accentColor) {
   parent.addChild(head);
 
   const visor = new Graphics();
-  visor.roundRect(cx - size * 0.66, cy - size * 0.42, size * 1.32, size * 0.48, 8);
+  visor.roundRect(
+    cx - size * 0.66,
+    cy - size * 0.42,
+    size * 1.32,
+    size * 0.48,
+    8,
+  );
   visor.fill({
     color: 0x0d1a38,
     alpha: 0.82,
@@ -591,7 +611,13 @@ function drawSymbolGlyph(parent, symbol, width, height, symbolStyle) {
   }
 
   if (label === "⚡") {
-    drawLightningGlyph(parent, width, height, symbolStyle.fill, symbolStyle.glow);
+    drawLightningGlyph(
+      parent,
+      width,
+      height,
+      symbolStyle.fill,
+      symbolStyle.glow,
+    );
     return;
   }
 
@@ -760,8 +786,7 @@ function getLayout(grid) {
   const columnGap = Math.max(7, Math.min(10, width * 0.018));
   const rowGap = Math.max(7, Math.min(10, height * 0.035));
 
-  const tileWidth =
-    (width - padding * 2 - columnGap * (columns - 1)) / columns;
+  const tileWidth = (width - padding * 2 - columnGap * (columns - 1)) / columns;
   const tileHeight = (height - padding * 2 - rowGap * (rows - 1)) / rows;
   const stepY = tileHeight + rowGap;
 
@@ -877,22 +902,6 @@ function drawGlassOverlay(width, height) {
     alpha: 0.022,
   });
   overlayLayer.addChild(secondShine);
-
-  const centerLineGlow = new Graphics();
-  centerLineGlow.rect(0, height * 0.47, width, height * 0.06);
-  centerLineGlow.fill({
-    color: 0xffd76a,
-    alpha: 0.055,
-  });
-  overlayLayer.addChild(centerLineGlow);
-
-  const centerLine = new Graphics();
-  centerLine.rect(0, height * 0.492, width, 1.5);
-  centerLine.fill({
-    color: 0xffd76a,
-    alpha: 0.25,
-  });
-  overlayLayer.addChild(centerLine);
 
   const topShadow = new Graphics();
   topShadow.rect(0, 0, width, height * 0.18);

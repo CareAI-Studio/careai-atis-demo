@@ -192,8 +192,87 @@ export class SlotGame {
     }, frameDelay);
   }
 
+  getPixiWinningSymbolRects() {
+    const effectsLayer = this.rootElement.querySelector(
+      "[data-pixi-effects-layer]",
+    );
+
+    if (!effectsLayer) {
+      return {
+        symbolRects: [],
+        paylineY: undefined,
+      };
+    }
+
+    const effectsRect = effectsLayer.getBoundingClientRect();
+    const positions = this.state.winningResult?.winningPositions || [];
+    const symbolRects = [];
+
+    for (const position of positions) {
+      if (
+        typeof position?.reelIndex !== "number" ||
+        typeof position?.rowIndex !== "number"
+      ) {
+        continue;
+      }
+
+      const reelElement = this.rootElement.querySelector(
+        `[data-reel-index="${position.reelIndex}"]`,
+      );
+
+      const symbolElement = reelElement?.children?.[position.rowIndex];
+
+      if (!symbolElement) {
+        continue;
+      }
+
+      const rect = symbolElement.getBoundingClientRect();
+
+      symbolRects.push({
+        x: rect.left - effectsRect.left,
+        y: rect.top - effectsRect.top,
+        width: rect.width,
+        height: rect.height,
+        reelIndex: position.reelIndex,
+        rowIndex: position.rowIndex,
+      });
+    }
+
+    const filteredRects = symbolRects.filter(
+      (rect) =>
+        Number.isFinite(rect.x) &&
+        Number.isFinite(rect.y) &&
+        Number.isFinite(rect.width) &&
+        Number.isFinite(rect.height) &&
+        rect.width > 0 &&
+        rect.height > 0,
+    );
+
+    const paylineY =
+      filteredRects.length > 0
+        ? filteredRects.reduce(
+            (sum, rect) => sum + rect.y + rect.height * 0.5,
+            0,
+          ) / filteredRects.length
+        : undefined;
+
+    return {
+      symbolRects: filteredRects,
+      paylineY,
+    };
+  }
+
   playWinFeedback() {
-    playPixiWinEffect();
+    const { symbolRects, paylineY } = this.getPixiWinningSymbolRects();
+
+    playPixiWinEffect({
+      symbolRects,
+      paylineY,
+      showPayline: false,
+      showSweep: true,
+      sparkCount: symbolRects.length > 0 ? 38 : 30,
+      lineSparkCount: symbolRects.length > 0 ? 16 : 12,
+    });
 
     if (!this.elements.frame) return;
 

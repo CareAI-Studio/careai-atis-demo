@@ -4555,3 +4555,38 @@ body::before {
     font-size: 0.48rem;
   }
 }
+
+/* =========================================================
+   v1.5.0 - Disable permanent decorative payline
+   The real win highlight will be handled by PixiJS / win symbols.
+   ========================================================= */
+
+.slot-game__reels::after,
+.slot-game--premium .slot-game__reels::after {
+  content: none !important;
+  display: none !important;
+}
+
+.slot-game__reels .slot-game__reel:first-child::before,
+.slot-game__reels .slot-game__reel:last-child::before,
+.slot-game--premium .slot-game__reels .slot-game__reel:first-child::before,
+.slot-game--premium .slot-game__reels .slot-game__reel:last-child::before {
+  content: none !important;
+  display: none !important;
+}
+
+/* =========================================================
+   v1.5.0 - Keep PixiJS win effects above PixiJS reels
+   ========================================================= */
+
+.pixi-effects-layer {
+  z-index: 30;
+}
+
+.slot-game__pixi-reels {
+  z-index: 12;
+}
+
+.slot-game__paytable-backdrop {
+  z-index: 40;
+}
