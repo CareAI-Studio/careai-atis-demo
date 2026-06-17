@@ -4,7 +4,7 @@ Portfolio projekt vytvořený jako ukázka pro pozici **Frontend Game Developer 
 
 Projekt představuje jednoduchý interaktivní herní prototyp ve stylu slot hry. Cílem není vytvořit reálnou hazardní hru, ale ukázat práci s frontendovým UI, herní logikou, animací, stavem aplikace, komunikací s backendem, základní integrací PixiJS, postupným canvas refaktorem a čistou strukturou projektu.
 
-Demo je postavené tak, aby šlo jednoduše spustit lokálně, ukázat u pohovoru a dál rozšiřovat například přes PixiJS canvas, GSAP animace, zvukové efekty, asset-based symboly nebo pokročilejší backendovou logiku.
+Demo je postavené tak, aby šlo jednoduše spustit lokálně, ukázat u pohovoru a dál rozšiřovat například přes PixiJS canvas, GSAP animace, asset-based symboly nebo pokročilejší backendovou logiku.
 
 ## Co demo ukazuje
 
@@ -16,10 +16,16 @@ Demo je postavené tak, aby šlo jednoduše spustit lokálně, ukázat u pohovor
 * TURBO režim pro rychlejší spin a rychlejší zastavení válců
 * 25 výherních linií
 * výpočet výhry přes payline systém
+* vyvážený line-bet výpočet výher přes 25 aktivních linií
+* paytable modal s vysvětlením výpočtu výher
 * zvýraznění výherních symbolů podle konkrétní vítězné linie
 * non-paying / blank symboly pro vyvážení četnosti výher
 * DOM reel strip animaci válců jako základ/fallback
 * postupné zastavení válců zleva doprava
+* zvukové efekty generované přes Web Audio API
+* přepínač SOUND / MUTED s uložením nastavení do localStorage
+* delší pauzu po výhře v AUTO režimu, aby byla výhra čitelná
+* Screen Wake Lock API pro zabránění zamknutí telefonu během hraní
 * PixiJS canvas efektovou vrstvu
 * ambient glow efekt
 * particle efekty v pozadí
@@ -44,6 +50,8 @@ Demo je postavené tak, aby šlo jednoduše spustit lokálně, ukázat u pohovor
 * JavaScript
 * HTML / CSS
 * PixiJS
+* Web Audio API
+* Screen Wake Lock API
 * Node.js
 * Express
 * Git
@@ -68,6 +76,8 @@ careai-atis-demo/
 │  ├─ src/
 │  │  ├─ api/
 │  │  │  └─ gameApi.js
+│  │  ├─ audio/
+│  │  │  └─ soundManager.js
 │  │  ├─ components/
 │  │  │  ├─ Header.js
 │  │  │  ├─ HeroSection.js
@@ -83,6 +93,8 @@ careai-atis-demo/
 │  │  │     └─ formatNumber.js
 │  │  ├─ styles/
 │  │  │  └─ main.css
+│  │  ├─ utils/
+│  │  │  └─ wakeLockManager.js
 │  │  ├─ pixi-effects.js
 │  │  ├─ pixi-reels.js
 │  │  └─ main.js
@@ -190,6 +202,8 @@ Backend vrací:
 * vítězné pozice v gridu
 * seznam všech výherních linií
 * počet aktivních linií
+* line bet
+* verzi paytable systému
 * čas odpovědi
 
 Frontend během spinu volá backend API. Pokud backend není dostupný, frontend zachytí chybu a automaticky použije lokální fallback výpočet, aby demo zůstalo funkční i bez spuštěného backendu.
@@ -202,7 +216,7 @@ Hráč spustí spin tlačítkem `SPIN`. Z kreditů se odečte aktuální sázka,
 
 Po dokončení spinu se zobrazí finální výsledek, aktualizují se kredity a případně se zvýrazní výherní symboly.
 
-Pokud spin skončí výhrou, spustí se také vizuální win feedback složený z PixiJS efektů a CSS animace.
+Pokud spin skončí výhrou, spustí se také vizuální win feedback složený z PixiJS efektů, CSS animace a zvukového efektu.
 
 ### AUTO režim
 
@@ -214,11 +228,30 @@ AUTO režim se vypne:
 * při nedostatku kreditů
 * při ručním spuštění spinu
 
+Pokud v AUTO režimu padne výhra, další spin se spustí až po krátké pauze. Díky tomu má hráč čas výhru přečíst a všimnout si výherních symbolů.
+
 ### TURBO režim
 
 Tlačítko `TURBO` funguje jako přepínač. Pokud je zapnuté, spin a zastavování válců běží rychleji.
 
 TURBO režim je čistě frontendová herní/UX mechanika. Nemění výsledek hry, pouze rychlost animace a čekání na dokončení spinu.
+
+Při kombinaci `TURBO + AUTO` zůstává zachovaná stejná pauza po výhře jako v běžném AUTO režimu, aby byla výhra pořád čitelná.
+
+### SOUND / MUTED
+
+Demo obsahuje zvukové efekty generované přes Web Audio API. Nejsou potřeba žádné externí audio soubory.
+
+Zvuky jsou použité pro:
+
+* kliknutí tlačítek
+* start spinu
+* zastavení válců
+* menší výhru
+* větší výhru
+* nedostatek kreditů
+
+Tlačítko `SOUND / MUTED` umožňuje zvuky vypnout nebo zapnout. Nastavení se ukládá do `localStorage`.
 
 ### 25 LINES
 
@@ -228,11 +261,39 @@ Každá linie definuje, kterou řadu má v jednotlivých válcích sledovat. Vý
 
 Pokud padne více výherních linií najednou, celková výhra se sečte.
 
+### Paytable a výpočet výhry
+
+Součástí automatu je tlačítko `PAYTABLE`, které otevře výherní tabulku přímo v herním modalu.
+
+Paytable ukazuje hodnoty symbolů pro:
+
+* 3 stejné symboly
+* 4 stejné symboly
+* 5 stejných symbolů
+
+Výpočet je postavený na line-bet systému:
+
+```txt
+line bet = celková sázka / 25 linií
+výhra na linii = line bet × hodnota symbolu
+celková výhra = součet všech výherních linií
+```
+
+Díky tomu nejsou výhry přepálené ani při 25 aktivních liniích a demo působí uvěřitelněji.
+
 ### Blank symboly
 
 Kvůli 25 aktivním liniím by čistě náhodný grid dával výhry příliš často. Proto demo obsahuje i non-paying / blank symboly, které snižují četnost výher a dělají demo uvěřitelnější.
 
 Blank symbol nemá výplatní hodnotu a nepočítá se jako výherní symbol.
+
+### Screen Wake Lock
+
+Na podporovaných mobilních prohlížečích používá demo Screen Wake Lock API.
+
+Cílem je, aby se telefon během hraní nebo běžícího AUTO režimu nezamykal. Wake lock se aktivuje po uživatelské interakci se hrou a při návratu stránky do popředí se pokusí znovu obnovit.
+
+Pokud prohlížeč Wake Lock API nepodporuje, demo pokračuje dál bez chyby.
 
 ## Animace válců
 
@@ -297,12 +358,20 @@ Aktuální verze obsahuje:
 * funkční AUTO režim
 * funkční TURBO režim
 * 25 výherních linií
+* vyvážený line-bet výpočet výher
 * výpočty výher na různých liniích
 * zvýraznění výherních symbolů podle vítězné linie
 * blank symboly pro vyvážení výher
 * DOM reel strip animaci jako základ/fallback
 * postupné zastavování válců
 * plynulejší reel strip animaci
+* zvukové efekty pro tlačítka, spin, zastavení válců, výhru a nedostatek kreditů
+* přepínač SOUND / MUTED
+* paytable modal dostupný přímo z horní části automatu
+* vysvětlení výpočtu výher: line bet = sázka / 25 linií
+* vyváženější paytable systém napříč frontendem i backendem
+* delší pauza po výhře v AUTO režimu
+* Screen Wake Lock API, aby se telefon během hraní nezamykal
 * PixiJS canvas efektovou vrstvu
 * ambient glow efekt
 * particle efekty
@@ -320,6 +389,7 @@ Aktuální verze obsahuje:
 * backend API endpoint `POST /api/game/spin`
 * frontend při spinu volá backend
 * pokud backend není dostupný, frontend použije lokální fallback výpočet
+* veřejné demo připravené pro prezentaci přes doménu `atis.careai.cz`
 
 ## Vývojové checkpointy
 
@@ -346,6 +416,10 @@ Aktuální verze obsahuje:
 * `1.3.2` – PixiJS left-to-right reel stop
 * `1.3.3` – PixiJS symbol visual polish
 * `1.3.4` – PixiJS reel visual polish
+* `1.3.8` – mobile public polish a veřejné demo přes atis.careai.cz
+* `1.4.0` – zvukové efekty, SOUND/MUTED a úprava premium control layoutu
+* `1.4.1` – rebalance paytable systému, sjednocení výpočtu výher mezi frontendem a backendem
+* `1.4.2` – paytable modal, delší AUTO pauza po výhře a Screen Wake Lock pro mobilní hraní
 
 ## Další plán
 
@@ -353,11 +427,10 @@ Další možné kroky:
 
 * dokončit přechod samotných válců z DOM/CSS na PixiJS jako hlavní renderer
 * zachovat DOM vrstvu pouze jako fallback
-* připravit asset-based symboly místo čistě vektorových glyphů
+* zvýraznit výherní symboly a výherní linie přímo přes PixiJS overlay
 * přidat silnější efekt pro vyšší výhry
-* zvýraznit výherní linii pomocí PixiJS overlay efektu
+* připravit asset-based symboly místo čistě vektorových glyphů
 * přidat pokročilejší easing při zastavování jednotlivých válců
-* přidat zvukové efekty
 * přidat GSAP animace pro UI přechody
 * připravit jednoduché nasazení na careai.cz / KAI.cz
 * přidat odkaz na GitHub do panelu „Zobrazit kód“
@@ -373,10 +446,14 @@ Potom jsem doplnil herní režimy AUTO a TURBO a rozšířil výpočet výher z 
 
 V další fázi jsem přidal PixiJS jako samostatnou canvas efektovou vrstvu. Nezasahovala do hotové DOM/CSS logiky automatu, ale doplnila ji o ambient glow, částice a výherní efekty. Díky tomu bylo možné začít s PixiJS bezpečně, bez rizika rozbití hotové hry.
 
-Následně jsem začal převádět samotné válce do PixiJS. Neudělal jsem to jako riskantní jednorázový přepis, ale jako samostatný renderer vedle existující DOM vrstvy. PixiJS renderer dnes umí vykreslit grid, animovat plynulé točení válců, zastavit je zleva doprava a zobrazit finální výsledek řízený backendem. Díky tomu zůstává herní logika oddělená od vizuální vrstvy a projekt je připravený na další rozšíření například o asset-based symboly, pokročilejší easing, zvuky nebo GSAP animace.
+Následně jsem začal převádět samotné válce do PixiJS. Neudělal jsem to jako riskantní jednorázový přepis, ale jako samostatný renderer vedle existující DOM vrstvy. PixiJS renderer dnes umí vykreslit grid, animovat plynulé točení válců, zastavit je zleva doprava a zobrazit finální výsledek řízený backendem. Díky tomu zůstává herní logika oddělená od vizuální vrstvy a projekt je připravený na další rozšíření například o asset-based symboly, pokročilejší easing nebo GSAP animace.
+
+Nakonec jsem doplnil zvuky přes Web Audio API, přepínač SOUND/MUTED, paytable modal s vysvětlením výpočtu výher a Screen Wake Lock API pro lepší mobilní testování. Demo tak není jen statická ukázka, ale plně klikatelné portfolio demo, které se dá ukázat přímo v prohlížeči na desktopu i telefonu.
 
 ## Poznámka
 
 Projekt vzniká jako portfolio ukázka. Důraz je kladený na přemýšlení nad strukturou, rozdělení odpovědností v kódu, schopnost rychle vytvořit funkční frontendový prototyp a připravit ho na backendové i canvasové rozšíření.
 
-Výherní pravděpodobnost a výplatní poměry jsou nastavené pro demo režim tak, aby bylo během krátké prezentace dobře vidět, že spin, paylines, zvýraznění výher, AUTO, TURBO, PixiJS efekty, PixiJS reel renderer a backend komunikace fungují.
+Výherní pravděpodobnost a výplatní poměry jsou nastavené pro demo režim tak, aby bylo během krátké prezentace dobře vidět, že spin, paylines, paytable, zvýraznění výher, AUTO, TURBO, zvuky, PixiJS efekty, PixiJS reel renderer a backend komunikace fungují.
+
+Nejde o reálnou hazardní hru ani produkt určený k sázení. Jde o demonstrační technický prototyp pro portfolio.
