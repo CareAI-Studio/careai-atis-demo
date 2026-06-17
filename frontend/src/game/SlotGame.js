@@ -5,6 +5,7 @@ import {
   MAX_BET,
   SPIN_DURATION,
   DEMO_SYMBOLS,
+  ACTIVE_PAYLINES,
 } from "./gameConfig.js";
 
 import {
@@ -34,6 +35,11 @@ import {
   playBigWinSound,
   playNoCreditSound,
 } from "../audio/soundManager.js";
+
+import {
+  requestWakeLock,
+  setupWakeLockAutoRestore,
+} from "../utils/wakeLockManager.js";
 
 const USE_BACKEND_SPIN = true;
 
@@ -96,6 +102,7 @@ export class SlotGame {
 
   mount() {
     setSoundEnabled(this.state.soundEnabled);
+    setupWakeLockAutoRestore();
 
     this.state.grid = createRandomGrid(DEMO_SYMBOLS);
     this.renderShell();
@@ -103,8 +110,14 @@ export class SlotGame {
     this.bindEvents();
     this.renderGrid(this.state.grid);
     this.updateUi();
+    this.closePaytable();
     this.initPixiLayer();
     this.initPixiReelsLayer();
+  }
+
+  async prepareUserInteraction() {
+    await unlockAudio();
+    await requestWakeLock();
   }
 
   initPixiLayer() {
@@ -195,6 +208,25 @@ export class SlotGame {
     }, 460);
   }
 
+  getPaytableRowsMarkup() {
+    return DEMO_SYMBOLS.filter((symbol) => symbol.id !== "blank")
+      .map(
+        (symbol) => `
+          <tr>
+            <td>
+              <span class="slot-game__paytable-symbol ${symbol.className}">
+                ${symbol.label}
+              </span>
+            </td>
+            <td>${symbol.payouts?.[3] || 0}×</td>
+            <td>${symbol.payouts?.[4] || 0}×</td>
+            <td>${symbol.payouts?.[5] || 0}×</td>
+          </tr>
+        `,
+      )
+      .join("");
+  }
+
   renderShell() {
     this.rootElement.innerHTML = `
       <div class="slot-game slot-game--premium">
@@ -202,7 +234,18 @@ export class SlotGame {
           <div class="pixi-effects-layer" data-pixi-effects-layer></div>
 
           <div class="slot-game__header">
-            <div class="slot-game__mode">DEMO REŽIM</div>
+            <div class="slot-game__header-actions">
+              <div class="slot-game__mode">DEMO REŽIM</div>
+
+              <button
+                type="button"
+                class="slot-game__paytable-btn"
+                data-action="open-paytable"
+                aria-label="Zobrazit výherní tabulku"
+              >
+                PAYTABLE
+              </button>
+            </div>
 
             <div class="slot-game__title">
               <span class="slot-game__title-mark">✦</span>
@@ -315,6 +358,86 @@ export class SlotGame {
           <div class="slot-game__status" data-status>
             Připraveno ke hře.
           </div>
+
+          <div
+            class="slot-game__paytable-backdrop"
+            data-paytable-backdrop
+            aria-hidden="true"
+          >
+            <div
+              class="slot-game__paytable-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="slot-paytable-title"
+            >
+              <div class="slot-game__paytable-head">
+                <div>
+                  <span class="slot-game__paytable-kicker">25 LINES</span>
+                  <h3 id="slot-paytable-title">Výherní tabulka</h3>
+                </div>
+
+                <button
+                  type="button"
+                  class="slot-game__paytable-close"
+                  data-action="close-paytable"
+                  aria-label="Zavřít výherní tabulku"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div class="slot-game__paytable-body">
+                <div class="slot-game__paytable-card">
+                  <h4>Hodnoty symbolů</h4>
+
+                  <table class="slot-game__paytable-table">
+                    <thead>
+                      <tr>
+                        <th>Symbol</th>
+                        <th>3×</th>
+                        <th>4×</th>
+                        <th>5×</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${this.getPaytableRowsMarkup()}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="slot-game__paytable-card slot-game__paytable-card--rules">
+                  <h4>Jak se počítá výhra</h4>
+
+                  <div class="slot-game__paytable-rule">
+                    <strong>1.</strong>
+                    <span>Celková sázka se rozdělí mezi ${ACTIVE_PAYLINES} aktivních linií.</span>
+                  </div>
+
+                  <div class="slot-game__paytable-formula">
+                    line bet = sázka ÷ ${ACTIVE_PAYLINES}
+                  </div>
+
+                  <div class="slot-game__paytable-rule">
+                    <strong>2.</strong>
+                    <span>Výhra na linii se počítá zleva doprava od prvního válce.</span>
+                  </div>
+
+                  <div class="slot-game__paytable-formula">
+                    výhra = line bet × hodnota symbolu
+                  </div>
+
+                  <div class="slot-game__paytable-rule">
+                    <strong>3.</strong>
+                    <span>Výhry z více linií se sčítají. Minimální výherní shoda jsou 3 stejné symboly.</span>
+                  </div>
+
+                  <p class="slot-game__paytable-note">
+                    Toto je portfolio demo pro ukázku frontend logiky, animací a PixiJS. Nejde o reálnou hazardní hru.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -349,48 +472,57 @@ export class SlotGame {
     this.elements.soundButton = this.rootElement.querySelector(
       '[data-action="toggle-sound"]',
     );
+    this.elements.paytableButton = this.rootElement.querySelector(
+      '[data-action="open-paytable"]',
+    );
+    this.elements.paytableCloseButton = this.rootElement.querySelector(
+      '[data-action="close-paytable"]',
+    );
+    this.elements.paytableBackdrop = this.rootElement.querySelector(
+      "[data-paytable-backdrop]",
+    );
     this.elements.frame = this.rootElement.querySelector(".slot-game__frame");
   }
 
   bindEvents() {
     this.elements.spinButton.addEventListener("click", async () => {
-      await unlockAudio();
+      await this.prepareUserInteraction();
       playButtonSound();
       this.spin();
     });
 
     this.elements.maxBetButton.addEventListener("click", async () => {
-      await unlockAudio();
+      await this.prepareUserInteraction();
       playButtonSound();
       this.setMaxBet();
     });
 
     this.elements.decreaseBetButton.addEventListener("click", async () => {
-      await unlockAudio();
+      await this.prepareUserInteraction();
       playButtonSound();
       this.changeBet(-10);
     });
 
     this.elements.increaseBetButton.addEventListener("click", async () => {
-      await unlockAudio();
+      await this.prepareUserInteraction();
       playButtonSound();
       this.changeBet(10);
     });
 
     this.elements.turboButton.addEventListener("click", async () => {
-      await unlockAudio();
+      await this.prepareUserInteraction();
       playButtonSound();
       this.toggleTurbo();
     });
 
     this.elements.autoButton.addEventListener("click", async () => {
-      await unlockAudio();
+      await this.prepareUserInteraction();
       playButtonSound();
       this.toggleAuto();
     });
 
     this.elements.soundButton.addEventListener("click", async () => {
-      await unlockAudio();
+      await this.prepareUserInteraction();
 
       if (isSoundEnabled()) {
         playButtonSound();
@@ -398,6 +530,42 @@ export class SlotGame {
 
       this.toggleSound();
     });
+
+    this.elements.paytableButton.addEventListener("click", async () => {
+      await this.prepareUserInteraction();
+      playButtonSound();
+      this.openPaytable();
+    });
+
+    this.elements.paytableCloseButton.addEventListener("click", async () => {
+      await this.prepareUserInteraction();
+      playButtonSound();
+      this.closePaytable();
+    });
+
+    this.elements.paytableBackdrop.addEventListener("click", (event) => {
+      if (event.target === this.elements.paytableBackdrop) {
+        this.closePaytable();
+      }
+    });
+  }
+
+  openPaytable() {
+    if (!this.elements.paytableBackdrop) return;
+
+    this.elements.paytableBackdrop.classList.add(
+      "slot-game__paytable-backdrop--open",
+    );
+    this.elements.paytableBackdrop.setAttribute("aria-hidden", "false");
+  }
+
+  closePaytable() {
+    if (!this.elements.paytableBackdrop) return;
+
+    this.elements.paytableBackdrop.classList.remove(
+      "slot-game__paytable-backdrop--open",
+    );
+    this.elements.paytableBackdrop.setAttribute("aria-hidden", "true");
   }
 
   renderGrid(grid, options = {}) {
@@ -832,6 +1000,8 @@ export class SlotGame {
     const { triggeredByAuto = false } = options;
 
     if (this.state.isSpinning) return;
+
+    requestWakeLock();
 
     this.clearAutoSpinTimer();
 
