@@ -35,6 +35,10 @@ Demo je postavené tak, aby šlo jednoduše spustit lokálně, ukázat u pohovor
 * plynulé PixiJS točení válců
 * postupné PixiJS zastavování válců zleva doprava
 * vektorově kreslené PixiJS symboly
+* asset-based PNG symboly
+* PixiJS texture loading systém
+* vlastní grafické assety pro symboly
+* fallback vykreslení při nenalezení assetu
 * vizuální polish PixiJS reel rendereru
 * oddělení UI od herní logiky
 * oddělení vizuálních efektů od herních výpočtů
@@ -43,6 +47,7 @@ Demo je postavené tak, aby šlo jednoduše spustit lokálně, ukázat u pohovor
 * propojení frontendu s backendem přes `POST /api/game/spin`
 * fallback režim, kdy hra běží dál lokálně, pokud backend není dostupný
 * připravenost na další rozšíření přes PixiJS, GSAP a backend
+
 
 ## Použitý stack
 
@@ -380,7 +385,17 @@ Aktuální verze obsahuje:
 * PixiJS renderer válců v souboru `frontend/src/pixi-reels.js`
 * plynulé PixiJS točení válců
 * PixiJS zastavování válců zleva doprava
-* vektorově kreslené PixiJS symboly
+* vektorově kreslené PixiJS symboly (fallback)
+* asset-based PNG symboly
+* AI symbol
+* Robot symbol
+* Lightning symbol
+* Diamond symbol
+* Heart symbol
+* Chat symbol
+* Star symbol
+* PixiJS texture cache
+* vlastní asset loading pipeline
 * jemný glass overlay přes PixiJS válce
 * settle/bounce efekt při zastavení válce
 * vizuální polish PixiJS symbolů a reel rendereru
@@ -420,6 +435,7 @@ Aktuální verze obsahuje:
 * `1.4.0` – zvukové efekty, SOUND/MUTED a úprava premium control layoutu
 * `1.4.1` – rebalance paytable systému, sjednocení výpočtu výher mezi frontendem a backendem
 * `1.4.2` – paytable modal, delší AUTO pauza po výhře a Screen Wake Lock pro mobilní hraní
+* `1.4.3` – asset-based symbol system, PNG symboly, texture cache a PixiJS asset loader
 
 ## Další plán
 
@@ -429,7 +445,6 @@ Další možné kroky:
 * zachovat DOM vrstvu pouze jako fallback
 * zvýraznit výherní symboly a výherní linie přímo přes PixiJS overlay
 * přidat silnější efekt pro vyšší výhry
-* připravit asset-based symboly místo čistě vektorových glyphů
 * přidat pokročilejší easing při zastavování jednotlivých válců
 * přidat GSAP animace pro UI přechody
 * připravit jednoduché nasazení na careai.cz / KAI.cz

@@ -1,4 +1,11 @@
-import { Application, Container, Graphics, Text } from "pixi.js";
+import {
+  Application,
+  Assets,
+  Container,
+  Graphics,
+  Sprite,
+  Text,
+} from "pixi.js";
 
 let pixiApp = null;
 let reelsLayer = null;
@@ -16,6 +23,8 @@ const spinState = {
   layout: null,
   isTurbo: false,
   settleAnimations: [],
+  idleTiles: [],
+  idleTime: 0,
 };
 
 const SYMBOL_STYLE_MAP = {
@@ -63,6 +72,126 @@ const SYMBOL_STYLE_MAP = {
   },
 };
 
+const SYMBOL_ASSET_MAP = {
+  AI: new URL("./assets/symbols/ai.png", import.meta.url).href,
+
+  "💎": new URL("./assets/symbols/diamond.png", import.meta.url).href,
+  "♦": new URL("./assets/symbols/diamond.png", import.meta.url).href,
+  "◆": new URL("./assets/symbols/diamond.png", import.meta.url).href,
+
+  "♡": new URL("./assets/symbols/heart.png", import.meta.url).href,
+  "♥": new URL("./assets/symbols/heart.png", import.meta.url).href,
+
+  "☁": new URL("./assets/symbols/chat.png", import.meta.url).href,
+  "💬": new URL("./assets/symbols/chat.png", import.meta.url).href,
+
+  "⚡": new URL("./assets/symbols/lightning.png", import.meta.url).href,
+  "🤖": new URL("./assets/symbols/robot.png", import.meta.url).href,
+
+  "⭐": new URL("./assets/symbols/star.png", import.meta.url).href,
+  "★": new URL("./assets/symbols/star.png", import.meta.url).href,
+};
+
+const SYMBOL_ASSET_SCALE_MAP = {
+  AI: 1.42,
+
+  "💎": 1.18,
+  "♦": 1.18,
+  "◆": 1.18,
+
+  "♡": 1.28,
+  "♥": 1.28,
+
+  "☁": 1.36,
+  "💬": 1.36,
+
+  "⚡": 1.22,
+  "🤖": 1.34,
+
+  "⭐": 1.22,
+  "★": 1.22,
+};
+
+const SYMBOL_ASSET_Y_OFFSET_MAP = {
+  AI: 0.5,
+
+  "💎": 0.5,
+  "♦": 0.5,
+  "◆": 0.5,
+
+  "♡": 0.5,
+  "♥": 0.5,
+
+  "☁": 0.5,
+  "💬": 0.5,
+
+  "⚡": 0.5,
+  "🤖": 0.49,
+
+  "⭐": 0.5,
+  "★": 0.5,
+};
+
+const symbolTextureCache = new Map();
+let symbolAssetsPreloaded = false;
+
+function getSymbolAssetUrl(label) {
+  return SYMBOL_ASSET_MAP[label] || null;
+}
+
+function getSymbolAssetScale(label) {
+  return SYMBOL_ASSET_SCALE_MAP[label] || 1.65;
+}
+
+function getSymbolAssetYOffset(label) {
+  return SYMBOL_ASSET_Y_OFFSET_MAP[label] || 0.5;
+}
+
+async function preloadSymbolAssets() {
+  if (symbolAssetsPreloaded) return;
+
+  const entries = Object.entries(SYMBOL_ASSET_MAP);
+
+  await Promise.all(
+    entries.map(async ([label, assetUrl]) => {
+      try {
+        const texture = await Assets.load(assetUrl);
+        symbolTextureCache.set(label, texture);
+        console.info("[SymbolAsset] loaded", label, assetUrl);
+      } catch (error) {
+        console.warn("[SymbolAsset] failed", label, assetUrl, error);
+      }
+    }),
+  );
+
+  symbolAssetsPreloaded = true;
+}
+
+function getSymbolTexture(label) {
+  return symbolTextureCache.get(label) || null;
+}
+
+function drawPremiumSymbolAsset(parent, symbol, width, height) {
+  const label = getSymbolLabel(symbol);
+  const texture = getSymbolTexture(label);
+
+  if (!texture) return false;
+
+  const sprite = new Sprite(texture);
+
+  sprite.anchor.set(0.5);
+  sprite.x = width * 0.5;
+  sprite.y = height * getSymbolAssetYOffset(label);
+
+  const maxSize = Math.min(width, height) * getSymbolAssetScale(label);
+  sprite.width = maxSize;
+  sprite.height = maxSize;
+
+  parent.addChild(sprite);
+
+  return true;
+}
+
 function getSymbolLabel(symbol) {
   return symbol?.label || "";
 }
@@ -104,14 +233,164 @@ function clearLayer(layer) {
   layer.removeChildren().forEach((child) => {
     child.destroy({
       children: true,
-      texture: true,
-      textureSource: true,
+      texture: false,
+      textureSource: false,
     });
   });
 }
 
 function resetSettleAnimations() {
   spinState.settleAnimations = [];
+}
+
+function clearIdleAnimations() {
+  spinState.idleTiles = [];
+  spinState.idleTime = 0;
+}
+
+function getIdleAnimationConfig(label) {
+  if (label === "AI") {
+    return {
+      mode: "breath",
+      amplitude: 0.026,
+      speed: 0.034,
+    };
+  }
+
+  if (label === "🤖") {
+    return {
+      mode: "robot",
+      amplitude: 0.022,
+      speed: 0.03,
+    };
+  }
+
+  if (label === "⚡") {
+    return {
+      mode: "bolt",
+      amplitude: 0.03,
+      speed: 0.055,
+    };
+  }
+
+  if (label === "⭐") {
+    return {
+      mode: "star",
+      amplitude: 0.028,
+      speed: 0.038,
+    };
+  }
+
+  if (label === "💎") {
+    return {
+      mode: "diamond",
+      amplitude: 0.024,
+      speed: 0.032,
+    };
+  }
+
+  if (label === "♡") {
+    return {
+      mode: "heart",
+      amplitude: 0.034,
+      speed: 0.036,
+    };
+  }
+
+  if (label === "☁") {
+    return {
+      mode: "cloud",
+      amplitude: 0.018,
+      speed: 0.025,
+    };
+  }
+
+  return {
+    mode: "default",
+    amplitude: 0.012,
+    speed: 0.026,
+  };
+}
+
+function createIdleShimmer(width, height, label) {
+  const shimmer = new Graphics();
+
+  if (label === "💎") {
+    shimmer.rect(-width * 0.22, -height * 0.12, width * 0.14, height * 1.28);
+    shimmer.fill({
+      color: 0xffffff,
+      alpha: 0.2,
+    });
+    shimmer.rotation = -0.45;
+    shimmer.blendMode = "add";
+    return shimmer;
+  }
+
+  if (label === "⚡") {
+    shimmer.circle(0, 0, Math.max(3, Math.min(width, height) * 0.055));
+    shimmer.fill({
+      color: 0xffffff,
+      alpha: 0.25,
+    });
+    shimmer.blendMode = "add";
+    return shimmer;
+  }
+
+  if (label === "⭐" || label === "AI") {
+    shimmer.rect(-width * 0.3, -height * 0.08, width * 0.16, height * 1.12);
+    shimmer.fill({
+      color: 0xffffff,
+      alpha: 0.14,
+    });
+    shimmer.rotation = -0.38;
+    shimmer.blendMode = "add";
+    return shimmer;
+  }
+
+  return null;
+}
+
+function registerIdleTile(tile, symbol, width, height, options = {}) {
+  const label = getSymbolLabel(symbol);
+  const symbolStyle = getSymbolStyle(symbol);
+  const hasPremiumAsset = Boolean(getSymbolAssetUrl(label));
+
+  if (
+    hasPremiumAsset ||
+    symbolStyle.isBlank ||
+    options.isSpinning ||
+    options.isDimmed
+  ) {
+    return;
+  }
+
+  const config = getIdleAnimationConfig(label);
+  const phase = Math.random() * Math.PI * 2;
+  const shimmer = createIdleShimmer(width, height, label);
+
+  if (shimmer) {
+    shimmer.x = -width * 0.35;
+    shimmer.y = height * 0.5;
+    shimmer.alpha = 0;
+    tile.addChild(shimmer);
+  }
+
+  tile.idleMeta = {
+    label,
+    width,
+    height,
+    phase,
+    mode: config.mode,
+    amplitude: config.amplitude,
+    speed: config.speed,
+    baseX: tile.x,
+    baseY: tile.y,
+    baseScaleX: tile.scale.x || 1,
+    baseScaleY: tile.scale.y || 1,
+    shimmer,
+  };
+
+  spinState.idleTiles.push(tile);
 }
 
 function addSettleAnimation(target, options = {}) {
@@ -500,6 +779,7 @@ function drawRobotGlyph(parent, width, height, color, glowColor, accentColor) {
   parent.addChild(visor);
 
   const eyeLeft = new Graphics();
+  eyeLeft.name = "robotEye";
   eyeLeft.circle(cx - size * 0.34, cy - size * 0.17, 3.8);
   eyeLeft.fill({
     color: 0x60d7ff,
@@ -508,6 +788,7 @@ function drawRobotGlyph(parent, width, height, color, glowColor, accentColor) {
   parent.addChild(eyeLeft);
 
   const eyeRight = new Graphics();
+  eyeRight.name = "robotEye";
   eyeRight.circle(cx + size * 0.34, cy - size * 0.17, 3.8);
   eyeRight.fill({
     color: 0xff5bd6,
@@ -573,6 +854,10 @@ function drawAiGlyph(parent, width, height, color, glowColor) {
 
 function drawSymbolGlyph(parent, symbol, width, height, symbolStyle) {
   const label = getSymbolLabel(symbol);
+
+  if (drawPremiumSymbolAsset(parent, symbol, width, height)) {
+    return;
+  }
 
   if (symbolStyle.isBlank) {
     const ghost = new Graphics();
@@ -651,116 +936,184 @@ function drawSymbolGlyph(parent, symbol, width, height, symbolStyle) {
 function drawSymbolTileContent(tile, symbol, width, height, options = {}) {
   const { isWinning = false, isDimmed = false, isSpinning = false } = options;
   const symbolStyle = getSymbolStyle(symbol);
+  const hasPremiumAsset = Boolean(getSymbolAssetUrl(getSymbolLabel(symbol)));
 
   clearLayer(tile);
 
-  tile.alpha = isDimmed ? 0.48 : 1;
+  tile.alpha = isDimmed ? 0.56 : 1;
 
   const base = new Graphics();
 
-  base.roundRect(0, 0, width, height, 15);
+  base.roundRect(0, 0, width, height, 16);
   base.fill({
-    color: symbolStyle.isBlank ? 0x071126 : 0x10214b,
-    alpha: symbolStyle.isBlank ? 0.74 : 0.96,
+    color: symbolStyle.isBlank ? 0x071126 : 0x0f2552,
+    alpha: symbolStyle.isBlank ? 0.68 : 0.98,
   });
 
   base.stroke({
-    width: 1,
-    color: symbolStyle.isBlank ? 0x1a355a : 0x2e79b9,
-    alpha: symbolStyle.isBlank ? 0.18 : 0.34,
+    width: symbolStyle.isBlank ? 1 : 1.5,
+    color: symbolStyle.isBlank ? 0x1a355a : 0x55cfff,
+    alpha: symbolStyle.isBlank ? 0.16 : 0.46,
   });
 
   tile.addChild(base);
 
+  const outerColorGlow = new Graphics();
+  outerColorGlow.ellipse(
+    width * 0.5,
+    height * 0.52,
+    width * 0.55,
+    height * 0.48,
+  );
+  outerColorGlow.fill({
+    color: isWinning ? 0xffd76a : symbolStyle.glow,
+    alpha: hasPremiumAsset
+      ? 0.04
+      : isWinning
+        ? 0.22
+        : symbolStyle.isBlank
+          ? 0.035
+          : 0.2,
+  });
+  tile.addChild(outerColorGlow);
+
   const innerPanel = new Graphics();
-  innerPanel.roundRect(5, 5, width - 10, height - 10, 12);
+  innerPanel.roundRect(4, 4, width - 8, height - 8, 13);
   innerPanel.fill({
-    color: symbolStyle.isBlank ? 0x08152d : 0x13295a,
-    alpha: symbolStyle.isBlank ? 0.7 : 0.86,
+    color: symbolStyle.isBlank ? 0x08152d : 0x17336d,
+    alpha: symbolStyle.isBlank ? 0.58 : 0.74,
   });
   innerPanel.stroke({
-    width: isWinning ? 2 : 1,
-    color: isWinning ? 0xffd76a : 0x62cfff,
-    alpha: isWinning ? 0.94 : symbolStyle.isBlank ? 0.12 : 0.22,
+    width: isWinning ? 2.5 : 1.2,
+    color: isWinning ? 0xffd76a : 0x7be4ff,
+    alpha: isWinning ? 0.96 : symbolStyle.isBlank ? 0.1 : 0.28,
   });
   tile.addChild(innerPanel);
 
-  const innerGlow = new Graphics();
-  innerGlow.ellipse(width * 0.5, height * 0.52, width * 0.42, height * 0.34);
-  innerGlow.fill({
-    color: isWinning ? 0xffd76a : symbolStyle.glow,
-    alpha: isWinning ? 0.24 : symbolStyle.isBlank ? 0.045 : 0.13,
+  const symbolBacklight = new Graphics();
+  symbolBacklight.ellipse(
+    width * 0.5,
+    height * 0.52,
+    width * 0.39,
+    height * 0.34,
+  );
+  symbolBacklight.fill({
+    color: isWinning ? 0xfff0a8 : symbolStyle.glow,
+    alpha: hasPremiumAsset
+      ? 0.035
+      : isWinning
+        ? 0.28
+        : symbolStyle.isBlank
+          ? 0.045
+          : 0.24,
   });
-  tile.addChild(innerGlow);
+  tile.addChild(symbolBacklight);
 
   const bottomShade = new Graphics();
-  bottomShade.roundRect(7, height * 0.58, width - 14, height * 0.32, 10);
+  bottomShade.roundRect(7, height * 0.62, width - 14, height * 0.26, 10);
   bottomShade.fill({
     color: 0x000000,
-    alpha: symbolStyle.isBlank ? 0.11 : 0.15,
+    alpha: symbolStyle.isBlank ? 0.08 : 0.09,
   });
   tile.addChild(bottomShade);
 
   const topShine = new Graphics();
-  topShine.roundRect(8, 7, width - 16, height * 0.28, 12);
+  topShine.roundRect(7, 6, width - 14, height * 0.25, 12);
   topShine.fill({
     color: 0xffffff,
-    alpha: symbolStyle.isBlank ? 0.03 : 0.095,
+    alpha: symbolStyle.isBlank ? 0.025 : 0.13,
   });
   tile.addChild(topShine);
 
+  const sideShine = new Graphics();
+  sideShine.roundRect(
+    width * 0.08,
+    height * 0.12,
+    width * 0.16,
+    height * 0.72,
+    10,
+  );
+  sideShine.fill({
+    color: 0xffffff,
+    alpha: symbolStyle.isBlank ? 0.01 : 0.035,
+  });
+  tile.addChild(sideShine);
+
   const edgeLight = new Graphics();
-  edgeLight.roundRect(7, 7, width - 14, height - 14, 12);
+  edgeLight.roundRect(6, 6, width - 12, height - 12, 13);
   edgeLight.stroke({
     width: 1,
     color: 0xffffff,
-    alpha: symbolStyle.isBlank ? 0.025 : 0.08,
+    alpha: symbolStyle.isBlank ? 0.02 : 0.13,
   });
   tile.addChild(edgeLight);
 
   const glyphLayer = new Container();
   glyphLayer.x = 0;
   glyphLayer.y = 0;
+
+  if (!symbolStyle.isBlank) {
+    glyphLayer.scale.set(1);
+    glyphLayer.x = 0;
+    glyphLayer.y = 0;
+  }
+
   tile.addChild(glyphLayer);
 
   drawSymbolGlyph(glyphLayer, symbol, width, height, symbolStyle);
+
+  tile.glyphLayer = glyphLayer;
 
   if (isSpinning) {
     const motionShade = new Graphics();
     motionShade.rect(0, 0, width, height);
     motionShade.fill({
       color: 0x000000,
-      alpha: 0.07,
+      alpha: 0.05,
     });
     tile.addChild(motionShade);
 
     const motionLine = new Graphics();
-    motionLine.roundRect(10, height * 0.5, width - 20, 2, 2);
+    motionLine.roundRect(8, height * 0.48, width - 16, 3, 2);
     motionLine.fill({
       color: 0xffffff,
-      alpha: 0.08,
+      alpha: 0.11,
     });
     tile.addChild(motionLine);
   }
 
   if (isWinning) {
+    const winOuterGlow = new Graphics();
+    winOuterGlow.roundRect(-5, -5, width + 10, height + 10, 20);
+    winOuterGlow.stroke({
+      width: 7,
+      color: 0xffd76a,
+      alpha: 0.28,
+    });
+    tile.addChild(winOuterGlow);
+
     const winGlow = new Graphics();
     winGlow.roundRect(-2, -2, width + 4, height + 4, 17);
     winGlow.stroke({
-      width: 3,
-      color: 0xffd76a,
-      alpha: 0.92,
+      width: 3.5,
+      color: 0xfff0a8,
+      alpha: 0.96,
     });
     tile.addChild(winGlow);
 
     const winWash = new Graphics();
-    winWash.ellipse(width / 2, height / 2, width * 0.44, height * 0.38);
+    winWash.ellipse(width / 2, height / 2, width * 0.5, height * 0.42);
     winWash.fill({
       color: 0xffd76a,
-      alpha: 0.12,
+      alpha: 0.16,
     });
     tile.addChild(winWash);
   }
+
+  registerIdleTile(tile, symbol, width, height, {
+    isSpinning,
+    isDimmed,
+  });
 }
 
 function createSymbolTile(symbol, x, y, width, height, options = {}) {
@@ -943,6 +1296,80 @@ function stopSpinInternal() {
   spinState.layout = null;
 }
 
+function updateIdleAnimations(deltaTime) {
+  if (spinState.active || !spinState.idleTiles.length) return;
+
+  spinState.idleTime += deltaTime;
+
+  for (let index = spinState.idleTiles.length - 1; index >= 0; index -= 1) {
+    const tile = spinState.idleTiles[index];
+
+    if (!tile || tile.destroyed || !tile.idleMeta) {
+      spinState.idleTiles.splice(index, 1);
+      continue;
+    }
+
+    const meta = tile.idleMeta;
+    const time = spinState.idleTime * meta.speed + meta.phase;
+    const wave = Math.sin(time);
+    const softWave = Math.sin(time * 0.72 + meta.phase * 0.3);
+
+    tile.x = meta.baseX;
+    tile.y = meta.baseY;
+    tile.rotation = 0;
+    tile.alpha = tile.alpha || 1;
+
+    if (meta.mode === "heart") {
+      const pulse = 1 + Math.max(0, wave) * meta.amplitude * 1.65;
+      tile.scale.set(meta.baseScaleX * pulse, meta.baseScaleY * pulse);
+    } else if (meta.mode === "bolt") {
+      const flicker = 1 + Math.max(0, Math.sin(time * 2.2)) * meta.amplitude;
+      tile.scale.set(meta.baseScaleX * flicker, meta.baseScaleY * flicker);
+      tile.rotation = Math.sin(time * 1.7) * 0.006;
+      tile.alpha = 0.94 + Math.max(0, wave) * 0.06;
+    } else if (meta.mode === "star") {
+      const pulse = 1 + wave * meta.amplitude;
+      tile.scale.set(meta.baseScaleX * pulse, meta.baseScaleY * pulse);
+      tile.rotation = Math.sin(time * 0.45) * 0.01;
+    } else if (meta.mode === "diamond") {
+      const pulse = 1 + wave * meta.amplitude;
+      tile.scale.set(
+        meta.baseScaleX * pulse,
+        meta.baseScaleY * (1 - wave * 0.006),
+      );
+      tile.rotation = Math.sin(time * 0.55) * 0.006;
+    } else if (meta.mode === "robot") {
+      const pulse = 1 + softWave * meta.amplitude;
+      tile.scale.set(meta.baseScaleX * pulse, meta.baseScaleY * pulse);
+      tile.y = meta.baseY + Math.sin(time * 0.85) * 0.7;
+    } else if (meta.mode === "cloud") {
+      tile.scale.set(meta.baseScaleX, meta.baseScaleY);
+      tile.x = meta.baseX + Math.sin(time * 0.8) * 1.2;
+      tile.y = meta.baseY + Math.cos(time * 0.7) * 0.55;
+    } else {
+      const pulse = 1 + wave * meta.amplitude;
+      tile.scale.set(meta.baseScaleX * pulse, meta.baseScaleY * pulse);
+    }
+
+    if (tile.glyphLayer) {
+      tile.glyphLayer.alpha = 0.92 + Math.max(0, wave) * 0.08;
+    }
+
+    if (meta.shimmer) {
+      const shimmerCycle = (Math.sin(time * 0.55) + 1) / 2;
+      const shouldShow = shimmerCycle > 0.72;
+      const shimmerProgress = shouldShow ? (shimmerCycle - 0.72) / 0.28 : 0;
+
+      meta.shimmer.alpha = shouldShow
+        ? Math.sin(shimmerProgress * Math.PI) * 0.85
+        : 0;
+
+      meta.shimmer.x = -meta.width * 0.35 + meta.width * 1.7 * shimmerProgress;
+      meta.shimmer.y = meta.height * 0.5;
+    }
+  }
+}
+
 function drawStaticReel(reel, reelIndex, layout, options = {}) {
   const { padding, columnGap, rowGap, tileWidth, tileHeight } = layout;
 
@@ -1013,6 +1440,7 @@ function renderGridInternal(grid, options = {}) {
 
   stopSpinInternal();
   resetSettleAnimations();
+  clearIdleAnimations();
 
   currentGrid = grid;
 
@@ -1043,6 +1471,7 @@ function buildSpinningReels(symbols, options = {}) {
   if (!pixiApp || !reelsLayer || !currentGrid) return;
 
   resetSettleAnimations();
+  clearIdleAnimations();
   clearLayer(reelsLayer);
 
   const layout = getLayout(currentGrid);
@@ -1074,6 +1503,7 @@ function renderStoppingReelsInternal(finalGrid, options = {}) {
   currentGrid = finalGrid;
 
   resetSettleAnimations();
+  clearIdleAnimations();
   clearLayer(reelsLayer);
 
   const layout = getLayout(finalGrid);
@@ -1130,7 +1560,9 @@ function renderStoppingReelsInternal(finalGrid, options = {}) {
 function updateSpinningReels(deltaTime) {
   updateSettleAnimations(deltaTime);
 
-  if (!spinState.active || !spinState.layout) return;
+  if (!spinState.active || !spinState.layout) {
+    return;
+  }
 
   const { height, padding, tileHeight, stepY } = spinState.layout;
   const maxY = height + tileHeight;
@@ -1173,6 +1605,7 @@ function ensureTicker() {
 
   pixiApp.ticker.add((ticker) => {
     updateSpinningReels(ticker.deltaTime);
+    updateIdleAnimations(ticker.deltaTime);
   });
 
   tickerReady = true;
@@ -1211,6 +1644,8 @@ export async function initPixiReels(options = {}) {
 
     ensureTicker();
   }
+
+  await preloadSymbolAssets();
 
   if (pixiApp.canvas.parentElement !== container) {
     container.appendChild(pixiApp.canvas);
@@ -1302,6 +1737,7 @@ export function destroyPixiReels() {
 
   stopSpinInternal();
   resetSettleAnimations();
+  clearIdleAnimations();
 
   if (pixiApp) {
     pixiApp.destroy(true, {
