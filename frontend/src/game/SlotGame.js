@@ -43,6 +43,8 @@ const NORMAL_REEL_STOP_BOUNCE_TIME = 420;
 const TURBO_REEL_STOP_BOUNCE_TIME = 260;
 const TURBO_SPIN_DURATION = Math.max(450, Math.round(SPIN_DURATION * 0.45));
 const AUTO_SPIN_DELAY = 650;
+const AUTO_WIN_PAUSE_DELAY = 2800;
+const TURBO_AUTO_WIN_PAUSE_DELAY = 2800;
 const STRIP_SYMBOL_COUNT = 18;
 const SOUND_STORAGE_KEY = "careai_slot_sound_enabled";
 
@@ -497,6 +499,47 @@ export class SlotGame {
     );
   }
 
+  getAllWinningPositions(winResult) {
+    const positionMap = new Map();
+
+    const addPosition = (position) => {
+      if (
+        typeof position?.reelIndex !== "number" ||
+        typeof position?.rowIndex !== "number"
+      ) {
+        return;
+      }
+
+      const key = `${position.reelIndex}-${position.rowIndex}`;
+      positionMap.set(key, position);
+    };
+
+    if (Array.isArray(winResult?.winningPositions)) {
+      winResult.winningPositions.forEach(addPosition);
+    }
+
+    if (Array.isArray(winResult?.winningLines)) {
+      winResult.winningLines.forEach((lineResult) => {
+        if (Array.isArray(lineResult?.winningPositions)) {
+          lineResult.winningPositions.forEach(addPosition);
+        }
+      });
+    }
+
+    return Array.from(positionMap.values());
+  }
+
+  getDisplayWinResult(winResult) {
+    if (!winResult) {
+      return winResult;
+    }
+
+    return {
+      ...winResult,
+      winningPositions: this.getAllWinningPositions(winResult),
+    };
+  }
+
   getSpinDuration() {
     return this.state.isTurbo ? TURBO_SPIN_DURATION : SPIN_DURATION;
   }
@@ -826,7 +869,8 @@ export class SlotGame {
       this.sleep(this.getSpinDuration()),
     ]).then(([result]) => result);
 
-    const { grid: finalGrid, winResult, source } = spinResult;
+    const { grid: finalGrid, winResult: rawWinResult, source } = spinResult;
+    const winResult = this.getDisplayWinResult(rawWinResult);
 
     await this.stopReelsOneByOne(finalGrid);
 
@@ -861,9 +905,15 @@ export class SlotGame {
 
     if (this.state.isAuto) {
       if (this.state.credits >= this.state.bet) {
-        this.state.status += " AUTO pokračuje dalším spinem.";
+        const hasWin = winResult.payout > 0;
+        const nextAutoDelay = hasWin ? AUTO_WIN_PAUSE_DELAY : AUTO_SPIN_DELAY;
+
+        this.state.status += hasWin
+          ? " AUTO chvíli počká, aby byla výhra vidět."
+          : " AUTO pokračuje dalším spinem.";
+
         this.updateUi();
-        this.scheduleAutoSpin();
+        this.scheduleAutoSpin(nextAutoDelay);
         return;
       }
 

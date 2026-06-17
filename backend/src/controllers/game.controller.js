@@ -1,45 +1,75 @@
+const ACTIVE_PAYLINES = 25;
+
 const DEMO_SYMBOLS = [
   {
     id: "robot",
     label: "🤖",
     className: "symbol--robot",
-    multiplier: 4,
+    payouts: {
+      3: 4,
+      4: 18,
+      5: 80,
+    },
   },
   {
     id: "heart",
     label: "♥",
     className: "symbol--heart",
-    multiplier: 3,
+    payouts: {
+      3: 2,
+      4: 8,
+      5: 30,
+    },
   },
   {
     id: "star",
     label: "★",
     className: "symbol--star",
-    multiplier: 3,
+    payouts: {
+      3: 3,
+      4: 10,
+      5: 40,
+    },
   },
   {
     id: "chat",
     label: "💬",
     className: "symbol--chat",
-    multiplier: 2,
+    payouts: {
+      3: 1,
+      4: 4,
+      5: 15,
+    },
   },
   {
     id: "ai",
     label: "AI",
     className: "symbol--ai",
-    multiplier: 5,
+    payouts: {
+      3: 5,
+      4: 25,
+      5: 120,
+    },
   },
   {
     id: "diamond",
     label: "◆",
     className: "symbol--diamond",
-    multiplier: 4,
+    payouts: {
+      3: 4,
+      4: 16,
+      5: 70,
+    },
   },
   {
     id: "bolt",
     label: "⚡",
     className: "symbol--bolt",
-    multiplier: 4,
+    payouts: {
+      3: 3,
+      4: 14,
+      5: 60,
+    },
   },
 ];
 
@@ -47,25 +77,14 @@ const BLANK_SYMBOL = {
   id: "blank",
   label: "",
   className: "symbol--blank",
-  multiplier: 0,
+  payouts: {
+    3: 0,
+    4: 0,
+    5: 0,
+  },
 };
 
 const BLANK_SYMBOL_WEIGHT = 5;
-
-function createWeightedSymbolPool(symbols) {
-  const blankSymbols = Array.from(
-    { length: BLANK_SYMBOL_WEIGHT },
-    () => BLANK_SYMBOL,
-  );
-
-  return [...symbols, ...blankSymbols];
-}
-
-const PAYOUT_MULTIPLIERS = {
-  3: 2,
-  4: 5,
-  5: 12,
-};
 
 const PAYLINES = [
   { id: 1, label: "Linie 1", rows: [1, 1, 1, 1, 1] },
@@ -97,6 +116,19 @@ const PAYLINES = [
 
 const DEFAULT_WIN_CHANCE = 0.04;
 
+function createWeightedSymbolPool(symbols) {
+  const blankSymbols = Array.from(
+    { length: BLANK_SYMBOL_WEIGHT },
+    () => BLANK_SYMBOL,
+  );
+
+  return [...symbols, ...blankSymbols];
+}
+
+function isPayingSymbol(symbol) {
+  return Boolean(symbol?.payouts?.[3] && symbol.payouts[3] > 0);
+}
+
 function getRandomSymbol(symbols) {
   const weightedSymbols = createWeightedSymbolPool(symbols);
   const index = Math.floor(Math.random() * weightedSymbols.length);
@@ -105,7 +137,7 @@ function getRandomSymbol(symbols) {
 }
 
 function getRandomPayingSymbol(symbols) {
-  const payingSymbols = symbols.filter((symbol) => symbol.multiplier > 0);
+  const payingSymbols = symbols.filter(isPayingSymbol);
   const index = Math.floor(Math.random() * payingSymbols.length);
 
   return payingSymbols[index];
@@ -136,6 +168,11 @@ function createDemoFinalGrid(symbols, winChance = DEFAULT_WIN_CHANCE) {
   }
 
   const winningSymbol = getRandomPayingSymbol(symbols);
+
+  if (!winningSymbol) {
+    return grid;
+  }
+
   const possibleStreaks = [3, 4, 5];
   const winningStreak =
     possibleStreaks[Math.floor(Math.random() * possibleStreaks.length)];
@@ -154,6 +191,18 @@ function getSymbolLineByRows(grid, rows) {
   return rows.map((rowIndex, reelIndex) => grid[reelIndex]?.[rowIndex]);
 }
 
+function getLineBet(totalBet) {
+  return totalBet / ACTIVE_PAYLINES;
+}
+
+function getSymbolPayoutMultiplier(symbol, streak) {
+  if (!symbol?.payouts) {
+    return 0;
+  }
+
+  return symbol.payouts[streak] || 0;
+}
+
 function getLeftStreak(symbolLine) {
   if (!symbolLine.length || !symbolLine[0]) {
     return 0;
@@ -161,7 +210,7 @@ function getLeftStreak(symbolLine) {
 
   const firstSymbol = symbolLine[0];
 
-  if (!firstSymbol.multiplier || firstSymbol.multiplier <= 0) {
+  if (!isPayingSymbol(firstSymbol)) {
     return 0;
   }
 
@@ -193,10 +242,13 @@ function createWinningPositions(payline, winningStreak) {
 function calculateLineWin(grid, bet, payline) {
   const symbolLine = getSymbolLineByRows(grid, payline.rows);
   const streak = getLeftStreak(symbolLine);
+  const lineBet = getLineBet(bet);
 
   if (streak < 3) {
     return {
       payout: 0,
+      lineBet,
+      payoutMultiplier: 0,
       winningSymbol: null,
       winningStreak: streak,
       winningLine: symbolLine,
@@ -207,11 +259,29 @@ function calculateLineWin(grid, bet, payline) {
   }
 
   const winningSymbol = symbolLine[0];
-  const lineMultiplier = PAYOUT_MULTIPLIERS[streak] || 0;
-  const payout = bet * lineMultiplier * winningSymbol.multiplier;
+  const payoutMultiplier = getSymbolPayoutMultiplier(winningSymbol, streak);
+
+  if (!payoutMultiplier || payoutMultiplier <= 0) {
+    return {
+      payout: 0,
+      lineBet,
+      payoutMultiplier: 0,
+      winningSymbol: null,
+      winningStreak: 0,
+      winningLine: symbolLine,
+      winningLineId: payline.id,
+      winningLineLabel: payline.label,
+      winningPositions: [],
+    };
+  }
+
+  const rawPayout = lineBet * payoutMultiplier;
+  const payout = Math.max(1, Math.round(rawPayout));
 
   return {
     payout,
+    lineBet,
+    payoutMultiplier,
     winningSymbol,
     winningStreak: streak,
     winningLine: symbolLine,
@@ -250,6 +320,8 @@ function calculateWin(grid, bet) {
   if (!winningLines.length) {
     return {
       payout: 0,
+      lineBet: getLineBet(bet),
+      payoutMultiplier: 0,
       winningSymbol: null,
       winningStreak: bestResult?.winningStreak || 0,
       winningLine: null,
@@ -258,11 +330,14 @@ function calculateWin(grid, bet) {
       winningPositions: [],
       winningLines: [],
       evaluatedLines: PAYLINES.length,
+      activePaylines: ACTIVE_PAYLINES,
     };
   }
 
   return {
     payout: totalPayout,
+    lineBet: getLineBet(bet),
+    payoutMultiplier: bestResult.payoutMultiplier,
     winningSymbol: bestResult.winningSymbol,
     winningStreak: bestResult.winningStreak,
     winningLine: bestResult.winningLine,
@@ -271,6 +346,7 @@ function calculateWin(grid, bet) {
     winningPositions: bestResult.winningPositions,
     winningLines,
     evaluatedLines: PAYLINES.length,
+    activePaylines: ACTIVE_PAYLINES,
   };
 }
 
@@ -290,6 +366,8 @@ export function spinDemoGame(req, res) {
     mode: "demo",
     bet,
     activeLines: PAYLINES.length,
+    lineBet: getLineBet(bet),
+    paytableVersion: "v1.4.1-line-bet",
     grid,
     result,
     timestamp: new Date().toISOString(),

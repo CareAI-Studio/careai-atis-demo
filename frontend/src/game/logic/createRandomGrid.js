@@ -4,7 +4,11 @@ const BLANK_SYMBOL = {
   id: "blank",
   label: "",
   className: "symbol--blank",
-  multiplier: 0,
+  payouts: {
+    3: 0,
+    4: 0,
+    5: 0,
+  },
 };
 
 const BLANK_SYMBOL_WEIGHT = 5;
@@ -18,6 +22,10 @@ function createWeightedSymbolPool(symbols) {
   return [...symbols, ...blankSymbols];
 }
 
+function isPayingSymbol(symbol) {
+  return Boolean(symbol?.payouts?.[3] && symbol.payouts[3] > 0);
+}
+
 export function getRandomSymbol(symbols) {
   const weightedSymbols = createWeightedSymbolPool(symbols);
   const index = Math.floor(Math.random() * weightedSymbols.length);
@@ -26,7 +34,12 @@ export function getRandomSymbol(symbols) {
 }
 
 export function getRandomPayingSymbol(symbols) {
-  const payingSymbols = symbols.filter((symbol) => symbol.multiplier > 0);
+  const payingSymbols = symbols.filter(isPayingSymbol);
+
+  if (!payingSymbols.length) {
+    return null;
+  }
+
   const index = Math.floor(Math.random() * payingSymbols.length);
 
   return payingSymbols[index];
@@ -57,6 +70,11 @@ export function createDemoFinalGrid(symbols, winChance = 0.04) {
   }
 
   const winningSymbol = getRandomPayingSymbol(symbols);
+
+  if (!winningSymbol) {
+    return grid;
+  }
+
   const possibleStreaks = [3, 4, 5];
   const winningStreak =
     possibleStreaks[Math.floor(Math.random() * possibleStreaks.length)];

@@ -1,8 +1,24 @@
-import { PAYOUT_MULTIPLIERS } from "../gameConfig.js";
+import { ACTIVE_PAYLINES } from "../gameConfig.js";
 import { PAYLINES } from "./paylines.js";
 
 export function getSymbolLineByRows(grid, rows) {
   return rows.map((rowIndex, reelIndex) => grid[reelIndex]?.[rowIndex]);
+}
+
+export function getLineBet(totalBet) {
+  return totalBet / ACTIVE_PAYLINES;
+}
+
+export function getSymbolPayoutMultiplier(symbol, streak) {
+  if (!symbol?.payouts) {
+    return 0;
+  }
+
+  return symbol.payouts[streak] || 0;
+}
+
+export function isPayingSymbol(symbol) {
+  return Boolean(symbol?.payouts?.[3] && symbol.payouts[3] > 0);
 }
 
 export function getLeftStreak(symbolLine) {
@@ -12,7 +28,7 @@ export function getLeftStreak(symbolLine) {
 
   const firstSymbol = symbolLine[0];
 
-  if (!firstSymbol.multiplier || firstSymbol.multiplier <= 0) {
+  if (!isPayingSymbol(firstSymbol)) {
     return 0;
   }
 
@@ -44,10 +60,13 @@ export function createWinningPositions(payline, winningStreak) {
 export function calculateLineWin(grid, bet, payline) {
   const symbolLine = getSymbolLineByRows(grid, payline.rows);
   const streak = getLeftStreak(symbolLine);
+  const lineBet = getLineBet(bet);
 
   if (streak < 3) {
     return {
       payout: 0,
+      lineBet,
+      payoutMultiplier: 0,
       winningSymbol: null,
       winningStreak: streak,
       winningLine: symbolLine,
@@ -58,10 +77,13 @@ export function calculateLineWin(grid, bet, payline) {
   }
 
   const winningSymbol = symbolLine[0];
+  const payoutMultiplier = getSymbolPayoutMultiplier(winningSymbol, streak);
 
-  if (!winningSymbol.multiplier || winningSymbol.multiplier <= 0) {
+  if (!payoutMultiplier || payoutMultiplier <= 0) {
     return {
       payout: 0,
+      lineBet,
+      payoutMultiplier: 0,
       winningSymbol: null,
       winningStreak: 0,
       winningLine: symbolLine,
@@ -71,11 +93,13 @@ export function calculateLineWin(grid, bet, payline) {
     };
   }
 
-  const lineMultiplier = PAYOUT_MULTIPLIERS[streak] || 0;
-  const payout = bet * lineMultiplier * winningSymbol.multiplier;
+  const rawPayout = lineBet * payoutMultiplier;
+  const payout = Math.max(1, Math.round(rawPayout));
 
   return {
     payout,
+    lineBet,
+    payoutMultiplier,
     winningSymbol,
     winningStreak: streak,
     winningLine: symbolLine,
@@ -114,6 +138,8 @@ export function calculateWin(grid, bet) {
   if (!winningLines.length) {
     return {
       payout: 0,
+      lineBet: getLineBet(bet),
+      payoutMultiplier: 0,
       winningSymbol: null,
       winningStreak: bestResult?.winningStreak || 0,
       winningLine: null,
@@ -122,11 +148,14 @@ export function calculateWin(grid, bet) {
       winningPositions: [],
       winningLines: [],
       evaluatedLines: PAYLINES.length,
+      activePaylines: ACTIVE_PAYLINES,
     };
   }
 
   return {
     payout: totalPayout,
+    lineBet: getLineBet(bet),
+    payoutMultiplier: bestResult.payoutMultiplier,
     winningSymbol: bestResult.winningSymbol,
     winningStreak: bestResult.winningStreak,
     winningLine: bestResult.winningLine,
@@ -135,5 +164,6 @@ export function calculateWin(grid, bet) {
     winningPositions: bestResult.winningPositions,
     winningLines,
     evaluatedLines: PAYLINES.length,
+    activePaylines: ACTIVE_PAYLINES,
   };
 }
