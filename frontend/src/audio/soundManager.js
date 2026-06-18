@@ -35,6 +35,12 @@ export function isSoundEnabled() {
   return soundEnabled;
 }
 
+function getWinLevelKey(winLevel = 3) {
+  if (winLevel >= 5) return 5;
+  if (winLevel >= 4) return 4;
+  return 3;
+}
+
 function playTone({
   frequency = 440,
   duration = 0.12,
@@ -59,7 +65,7 @@ function playTone({
   gain.gain.linearRampToValueAtTime(volume, startTime + attack);
   gain.gain.exponentialRampToValueAtTime(
     0.001,
-    startTime + duration + release
+    startTime + duration + release,
   );
 
   oscillator.connect(gain);
@@ -108,6 +114,109 @@ function playNoise({
   source.stop(startTime + duration);
 }
 
+function playWinSmallSequence() {
+  playTone({
+    frequency: 420,
+    duration: 0.08,
+    type: "triangle",
+    volume: 0.16,
+  });
+
+  playTone({
+    frequency: 560,
+    duration: 0.09,
+    type: "triangle",
+    volume: 0.17,
+    delay: 0.08,
+  });
+
+  playTone({
+    frequency: 720,
+    duration: 0.12,
+    type: "triangle",
+    volume: 0.19,
+    delay: 0.16,
+  });
+}
+
+function playWinMediumSequence() {
+  playTone({
+    frequency: 440,
+    duration: 0.08,
+    type: "triangle",
+    volume: 0.2,
+  });
+
+  playTone({
+    frequency: 590,
+    duration: 0.09,
+    type: "triangle",
+    volume: 0.21,
+    delay: 0.07,
+  });
+
+  playTone({
+    frequency: 760,
+    duration: 0.11,
+    type: "triangle",
+    volume: 0.23,
+    delay: 0.14,
+  });
+
+  playTone({
+    frequency: 980,
+    duration: 0.14,
+    type: "triangle",
+    volume: 0.22,
+    delay: 0.23,
+  });
+
+  playNoise({
+    duration: 0.22,
+    volume: 0.08,
+    delay: 0.12,
+    filterFrequency: 1700,
+  });
+}
+
+function playWinBigSequence() {
+  const notes = [520, 660, 780, 1040, 1320, 1560];
+
+  notes.forEach((note, index) => {
+    playTone({
+      frequency: note,
+      duration: index >= 4 ? 0.15 : 0.11,
+      type: "triangle",
+      volume: index >= 4 ? 0.26 : 0.23,
+      delay: index * 0.085,
+    });
+  });
+
+  playTone({
+    frequency: 260,
+    duration: 0.22,
+    type: "sawtooth",
+    volume: 0.08,
+    attack: 0.015,
+    release: 0.12,
+    delay: 0.02,
+  });
+
+  playNoise({
+    duration: 0.42,
+    volume: 0.14,
+    delay: 0.12,
+    filterFrequency: 1900,
+  });
+
+  playNoise({
+    duration: 0.28,
+    volume: 0.09,
+    delay: 0.28,
+    filterFrequency: 2800,
+  });
+}
+
 export function playButtonSound() {
   playTone({
     frequency: 520,
@@ -142,49 +251,27 @@ export function playReelStopSound(index = 0) {
 }
 
 export function playSmallWinSound() {
-  playTone({
-    frequency: 420,
-    duration: 0.08,
-    type: "triangle",
-    volume: 0.18,
-  });
-
-  playTone({
-    frequency: 560,
-    duration: 0.09,
-    type: "triangle",
-    volume: 0.18,
-    delay: 0.08,
-  });
-
-  playTone({
-    frequency: 720,
-    duration: 0.12,
-    type: "triangle",
-    volume: 0.2,
-    delay: 0.16,
-  });
+  playWinSmallSequence();
 }
 
 export function playBigWinSound() {
-  const notes = [520, 660, 780, 1040, 1320];
+  playWinBigSequence();
+}
 
-  notes.forEach((note, index) => {
-    playTone({
-      frequency: note,
-      duration: 0.11,
-      type: "triangle",
-      volume: 0.22,
-      delay: index * 0.09,
-    });
-  });
+export function playWinLevelSound(winLevel = 3) {
+  const level = getWinLevelKey(winLevel);
 
-  playNoise({
-    duration: 0.35,
-    volume: 0.12,
-    delay: 0.15,
-    filterFrequency: 1800,
-  });
+  if (level >= 5) {
+    playWinBigSequence();
+    return;
+  }
+
+  if (level >= 4) {
+    playWinMediumSequence();
+    return;
+  }
+
+  playWinSmallSequence();
 }
 
 export function playNoCreditSound() {

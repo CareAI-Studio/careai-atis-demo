@@ -31,8 +31,7 @@ import {
   playButtonSound,
   playSpinStartSound,
   playReelStopSound,
-  playSmallWinSound,
-  playBigWinSound,
+  playWinLevelSound,
   playNoCreditSound,
 } from "../audio/soundManager.js";
 
@@ -53,6 +52,92 @@ const AUTO_WIN_PAUSE_DELAY = 2800;
 const TURBO_AUTO_WIN_PAUSE_DELAY = 2800;
 const STRIP_SYMBOL_COUNT = 18;
 const SOUND_STORAGE_KEY = "careai_slot_sound_enabled";
+
+const PAYTABLE_SYMBOL_ASSETS = {
+  ai: new URL("../assets/symbols/ai.png", import.meta.url).href,
+  robot: new URL("../assets/symbols/robot.png", import.meta.url).href,
+  lightning: new URL("../assets/symbols/lightning.png", import.meta.url).href,
+  diamond: new URL("../assets/symbols/diamond.png", import.meta.url).href,
+  heart: new URL("../assets/symbols/heart.png", import.meta.url).href,
+  chat: new URL("../assets/symbols/chat.png", import.meta.url).href,
+  star: new URL("../assets/symbols/star.png", import.meta.url).href,
+};
+
+function getPaytableSymbolAssetKey(symbol) {
+  const id = String(symbol?.id || "").toLowerCase();
+  const className = String(symbol?.className || "").toLowerCase();
+  const label = String(symbol?.label || "");
+
+  if (id.includes("ai") || className.includes("ai") || label === "AI") {
+    return "ai";
+  }
+
+  if (
+    id.includes("robot") ||
+    className.includes("robot") ||
+    label.includes("🤖")
+  ) {
+    return "robot";
+  }
+
+  if (
+    id.includes("lightning") ||
+    id.includes("bolt") ||
+    className.includes("lightning") ||
+    className.includes("bolt") ||
+    label.includes("⚡")
+  ) {
+    return "lightning";
+  }
+
+  if (
+    id.includes("diamond") ||
+    className.includes("diamond") ||
+    label.includes("💎") ||
+    label.includes("♦") ||
+    label.includes("◆")
+  ) {
+    return "diamond";
+  }
+
+  if (
+    id.includes("heart") ||
+    className.includes("heart") ||
+    label.includes("♡") ||
+    label.includes("♥") ||
+    label.includes("❤")
+  ) {
+    return "heart";
+  }
+
+  if (
+    id.includes("chat") ||
+    id.includes("cloud") ||
+    className.includes("chat") ||
+    className.includes("cloud") ||
+    label.includes("☁") ||
+    label.includes("💬")
+  ) {
+    return "chat";
+  }
+
+  if (
+    id.includes("star") ||
+    className.includes("star") ||
+    label.includes("⭐") ||
+    label.includes("★")
+  ) {
+    return "star";
+  }
+
+  return null;
+}
+
+function getPaytableSymbolAsset(symbol) {
+  const key = getPaytableSymbolAssetKey(symbol);
+
+  return key ? PAYTABLE_SYMBOL_ASSETS[key] : null;
+}
 
 function getInitialSoundEnabled() {
   try {
@@ -270,8 +355,7 @@ export class SlotGame {
       paylineY,
       showPayline: false,
       showSweep: true,
-      sparkCount: symbolRects.length > 0 ? 38 : 30,
-      lineSparkCount: symbolRects.length > 0 ? 16 : 12,
+      winLevel: this.state.winningResult?.winningStreak || 3,
     });
 
     if (!this.elements.frame) return;
@@ -289,20 +373,36 @@ export class SlotGame {
 
   getPaytableRowsMarkup() {
     return DEMO_SYMBOLS.filter((symbol) => symbol.id !== "blank")
-      .map(
-        (symbol) => `
+      .map((symbol) => {
+        const assetUrl = getPaytableSymbolAsset(symbol);
+
+        const symbolMarkup = assetUrl
+          ? `
+      <span class="slot-game__paytable-symbol slot-game__paytable-symbol--asset">
+        <img
+          class="slot-game__paytable-symbol-img"
+          src="${assetUrl}"
+          alt="${symbol.label}"
+          loading="lazy"
+        />
+      </span>
+    `
+          : `
+      <span class="slot-game__paytable-symbol ${symbol.className}">
+        ${symbol.label}
+      </span>
+    `;
+        return `
           <tr>
             <td>
-              <span class="slot-game__paytable-symbol ${symbol.className}">
-                ${symbol.label}
-              </span>
+              ${symbolMarkup}
             </td>
             <td>${symbol.payouts?.[3] || 0}×</td>
             <td>${symbol.payouts?.[4] || 0}×</td>
             <td>${symbol.payouts?.[5] || 0}×</td>
           </tr>
-        `,
-      )
+        `;
+      })
       .join("");
   }
 
@@ -1138,16 +1238,13 @@ export class SlotGame {
 
     if (winResult.payout > 0) {
       const winningLinesText = this.getWinningLinesText(winResult);
+      const winLevel = winResult.winningStreak || 3;
 
-      if (winResult.payout >= this.state.bet * 10) {
-        playBigWinSound();
-      } else {
-        playSmallWinSound();
-      }
+      playWinLevelSound(winLevel);
 
       this.playWinFeedback();
 
-      this.state.status = `Výhra ${formatNumber(winResult.payout)} kreditů. Symbol ${winResult.winningSymbol.label} × ${winResult.winningStreak} na ${winningLinesText}. Výsledek připravilo ${resultSourceLabel}.`;
+      this.state.status = `Výhra ${formatNumber(winResult.payout)} kreditů. Symbol ${winResult.winningSymbol.label} × ${winLevel} na ${winningLinesText}. Výsledek připravilo ${resultSourceLabel}.`;
     } else {
       this.state.status = `Tentokrát bez výhry na 25 liniích. Zkus další spin. Výsledek připravilo ${resultSourceLabel}.`;
     }

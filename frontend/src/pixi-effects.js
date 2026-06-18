@@ -18,6 +18,186 @@ const winSweeps = [];
 
 let flashAlpha = 0;
 
+const WIN_LEVEL_EFFECTS = {
+  3: {
+    name: "small",
+    flashAlpha: 0.95,
+    burstStartScale: 0.22,
+    burstScaleSpeed: 0.026,
+    burstFadeSpeed: 0.017,
+    sparkCount: 30,
+    lineSparkCount: 16,
+    rectSparkCount: 4,
+    sparkSizeMin: 1.8,
+    sparkSizeMax: 5.2,
+    sparkSpeedMin: 1.8,
+    sparkSpeedMax: 5.0,
+    lineSparkSizeMin: 1.6,
+    lineSparkSizeMax: 4.0,
+    lineSparkSpeedMin: 2.2,
+    lineSparkSpeedMax: 5.2,
+    rectSparkSizeMin: 1.7,
+    rectSparkSizeMax: 4.2,
+    rectSparkSpeedMin: 1.2,
+    rectSparkSpeedMax: 3.4,
+    highlightFillAlpha: 0.12,
+    highlightOuterWidth: 8,
+    highlightOuterAlpha: 0.2,
+    highlightMainWidth: 5,
+    highlightBlueAlpha: 0.34,
+    highlightMaxLife: 180,
+    highlightPulseMin: 0.13,
+    highlightPulseMax: 0.18,
+    paylineMaxLife: 58,
+    paylineOuterWidth: 10,
+    paylineCoreWidth: 5,
+    sweepMaxLife: 96,
+    sweepOuterWidth: 18,
+    sweepMiddleWidth: 11,
+    sweepCoreWidth: 6,
+    sweepHeadMultiplier: 0.075,
+    shakePower: 0,
+    shakeLife: 0,
+  },
+  4: {
+    name: "medium",
+    flashAlpha: 1.75,
+    burstStartScale: 0.29,
+    burstScaleSpeed: 0.033,
+    burstFadeSpeed: 0.014,
+    sparkCount: 76,
+    lineSparkCount: 42,
+    rectSparkCount: 7,
+    sparkSizeMin: 2.4,
+    sparkSizeMax: 6.8,
+    sparkSpeedMin: 2.4,
+    sparkSpeedMax: 6.7,
+    lineSparkSizeMin: 2.0,
+    lineSparkSizeMax: 5.0,
+    lineSparkSpeedMin: 3.0,
+    lineSparkSpeedMax: 6.8,
+    rectSparkSizeMin: 2.2,
+    rectSparkSizeMax: 5.2,
+    rectSparkSpeedMin: 1.6,
+    rectSparkSpeedMax: 4.4,
+    highlightFillAlpha: 0.19,
+    highlightOuterWidth: 12,
+    highlightOuterAlpha: 0.31,
+    highlightMainWidth: 7,
+    highlightBlueAlpha: 0.56,
+    highlightMaxLife: 220,
+    highlightPulseMin: 0.16,
+    highlightPulseMax: 0.22,
+    paylineMaxLife: 82,
+    paylineOuterWidth: 15,
+    paylineCoreWidth: 7,
+    sweepMaxLife: 118,
+    sweepOuterWidth: 24,
+    sweepMiddleWidth: 15,
+    sweepCoreWidth: 8,
+    sweepHeadMultiplier: 0.095,
+    shakePower: 0,
+    shakeLife: 0,
+  },
+  5: {
+    name: "big",
+    flashAlpha: 2.65,
+    burstStartScale: 0.36,
+    burstScaleSpeed: 0.04,
+    burstFadeSpeed: 0.011,
+    sparkCount: 150,
+    lineSparkCount: 86,
+    rectSparkCount: 11,
+    sparkSizeMin: 3.0,
+    sparkSizeMax: 8.2,
+    sparkSpeedMin: 2.9,
+    sparkSpeedMax: 8.0,
+    lineSparkSizeMin: 2.5,
+    lineSparkSizeMax: 5.8,
+    lineSparkSpeedMin: 3.8,
+    lineSparkSpeedMax: 8.2,
+    rectSparkSizeMin: 2.8,
+    rectSparkSizeMax: 6.4,
+    rectSparkSpeedMin: 2.0,
+    rectSparkSpeedMax: 5.5,
+    highlightFillAlpha: 0.26,
+    highlightOuterWidth: 15,
+    highlightOuterAlpha: 0.42,
+    highlightMainWidth: 9,
+    highlightBlueAlpha: 0.72,
+    highlightMaxLife: 260,
+    highlightPulseMin: 0.2,
+    highlightPulseMax: 0.28,
+    paylineMaxLife: 106,
+    paylineOuterWidth: 22,
+    paylineCoreWidth: 10,
+    sweepMaxLife: 142,
+    sweepOuterWidth: 31,
+    sweepMiddleWidth: 20,
+    sweepCoreWidth: 10,
+    sweepHeadMultiplier: 0.12,
+    shakePower: 4.5,
+    shakeLife: 32,
+  },
+};
+
+const shakeState = {
+  life: 0,
+  maxLife: 0,
+  power: 0,
+};
+
+function getWinLevelKey(winLevel = 3) {
+  if (winLevel >= 5) return 5;
+  if (winLevel >= 4) return 4;
+  return 3;
+}
+
+function getWinLevelConfig(winLevel = 3) {
+  return WIN_LEVEL_EFFECTS[getWinLevelKey(winLevel)] || WIN_LEVEL_EFFECTS[3];
+}
+
+function startScreenShake(config) {
+  if (!config?.shakePower || !config?.shakeLife) return;
+
+  shakeState.life = 0;
+  shakeState.maxLife = config.shakeLife;
+  shakeState.power = config.shakePower;
+}
+
+function resetScreenShake() {
+  if (!rootLayer) return;
+
+  rootLayer.x = 0;
+  rootLayer.y = 0;
+  rootLayer.rotation = 0;
+}
+
+function updateScreenShake(deltaTime) {
+  if (!rootLayer) return;
+
+  if (shakeState.life <= 0 && shakeState.maxLife <= 0) {
+    resetScreenShake();
+    return;
+  }
+
+  shakeState.life += deltaTime;
+
+  const progress = Math.min(1, shakeState.life / shakeState.maxLife);
+  const strength = (1 - progress) * shakeState.power;
+
+  rootLayer.x = getRandom(-strength, strength);
+  rootLayer.y = getRandom(-strength, strength);
+  rootLayer.rotation = getRandom(-strength, strength) * 0.0009;
+
+  if (progress >= 1) {
+    shakeState.life = 0;
+    shakeState.maxLife = 0;
+    shakeState.power = 0;
+    resetScreenShake();
+  }
+}
+
 function getRandom(min, max) {
   return Math.random() * (max - min) + min;
 }
@@ -78,49 +258,87 @@ function drawFlash(width, height) {
 
   if (flashAlpha <= 0) return;
 
+  const strength = Math.min(1.8, flashAlpha);
+
   flashLayer
     .rect(0, 0, width, height)
-    .fill({ color: 0xffffff, alpha: flashAlpha * 0.1 });
+    .fill({ color: 0xffffff, alpha: strength * 0.11 });
 
   flashLayer
-    .ellipse(width * 0.5, height * 0.48, width * 0.4, height * 0.18)
-    .fill({ color: 0xffd76a, alpha: flashAlpha * 0.16 });
+    .ellipse(width * 0.5, height * 0.48, width * 0.42, height * 0.2)
+    .fill({ color: 0xffd76a, alpha: strength * 0.18 });
 
   flashLayer
-    .ellipse(width * 0.5, height * 0.48, width * 0.58, height * 0.28)
-    .stroke({ width: 3, color: 0xffd76a, alpha: flashAlpha * 0.38 });
+    .ellipse(width * 0.5, height * 0.48, width * 0.62, height * 0.31)
+    .stroke({ width: 4, color: 0xffd76a, alpha: strength * 0.42 });
+
+  if (flashAlpha > 1.4) {
+    flashLayer
+      .ellipse(width * 0.5, height * 0.48, width * 0.74, height * 0.38)
+      .stroke({
+        width: 2,
+        color: 0xffffff,
+        alpha: (flashAlpha - 1.2) * 0.18,
+      });
+  }
 }
 
-function createWinBurst(width, height) {
+function createWinBurst(width, height, winLevel = 3) {
+  const config = getWinLevelConfig(winLevel);
   const burst = new Graphics();
 
   burst.x = width * 0.5;
   burst.y = height * 0.48;
-  burst.scale.set(0.22);
+  burst.scale.set(config.burstStartScale);
   burst.alpha = 0.95;
   burst.life = 0;
+  burst.scaleSpeed = config.burstScaleSpeed;
+  burst.fadeSpeed = config.burstFadeSpeed;
 
-  burst
-    .circle(0, 0, 42)
-    .stroke({ width: 4, color: 0xffffff, alpha: 0.85 });
+  burst.circle(0, 0, 42).stroke({
+    width: winLevel >= 5 ? 7 : winLevel >= 4 ? 5 : 4,
+    color: 0xffffff,
+    alpha: 0.88,
+  });
 
-  burst
-    .circle(0, 0, 78)
-    .stroke({ width: 2, color: 0xffd76a, alpha: 0.7 });
+  burst.circle(0, 0, 78).stroke({
+    width: winLevel >= 5 ? 5 : winLevel >= 4 ? 3 : 2,
+    color: 0xffd76a,
+    alpha: 0.72,
+  });
 
-  burst
-    .circle(0, 0, 118)
-    .stroke({ width: 2, color: 0x62d6ff, alpha: 0.42 });
+  burst.circle(0, 0, 118).stroke({
+    width: winLevel >= 5 ? 4 : 2,
+    color: 0x62d6ff,
+    alpha: winLevel >= 4 ? 0.52 : 0.42,
+  });
+
+  if (winLevel >= 4) {
+    burst.circle(0, 0, 148).stroke({
+      width: winLevel >= 5 ? 3 : 2,
+      color: 0xfff0a8,
+      alpha: winLevel >= 5 ? 0.44 : 0.3,
+    });
+  }
+
+  if (winLevel >= 5) {
+    burst.circle(0, 0, 188).stroke({
+      width: 2,
+      color: 0xffffff,
+      alpha: 0.28,
+    });
+  }
 
   return burst;
 }
 
-function createWinSpark(width, height) {
+function createWinSpark(width, height, winLevel = 3) {
+  const config = getWinLevelConfig(winLevel);
   const spark = new Graphics();
 
-  const size = getRandom(2, 5.5);
+  const size = getRandom(config.sparkSizeMin, config.sparkSizeMax);
   const angle = getRandom(0, Math.PI * 2);
-  const speed = getRandom(1.8, 5.2);
+  const speed = getRandom(config.sparkSpeedMin, config.sparkSpeedMax);
   const color = Math.random() > 0.45 ? 0xffd76a : 0xffffff;
 
   spark.circle(0, 0, size);
@@ -131,16 +349,22 @@ function createWinSpark(width, height) {
   spark.vx = Math.cos(angle) * speed;
   spark.vy = Math.sin(angle) * speed;
   spark.life = 0;
-  spark.maxLife = getRandom(32, 58);
+  spark.maxLife =
+    winLevel >= 5
+      ? getRandom(48, 82)
+      : winLevel >= 4
+        ? getRandom(38, 68)
+        : getRandom(32, 58);
   spark.rotationSpeed = getRandom(-0.08, 0.08);
 
   return spark;
 }
 
-function createLineSpark(width, height) {
+function createLineSpark(width, height, winLevel = 3) {
+  const config = getWinLevelConfig(winLevel);
   const spark = new Graphics();
 
-  const size = getRandom(1.6, 4.2);
+  const size = getRandom(config.lineSparkSizeMin, config.lineSparkSizeMax);
   const direction = Math.random() > 0.5 ? 1 : -1;
 
   spark.circle(0, 0, size);
@@ -148,10 +372,16 @@ function createLineSpark(width, height) {
 
   spark.x = width * 0.5 + getRandom(-width * 0.25, width * 0.25);
   spark.y = height * 0.48 + getRandom(-12, 12);
-  spark.vx = direction * getRandom(2.4, 5.8);
+  spark.vx =
+    direction * getRandom(config.lineSparkSpeedMin, config.lineSparkSpeedMax);
   spark.vy = getRandom(-0.7, 0.7);
   spark.life = 0;
-  spark.maxLife = getRandom(24, 42);
+  spark.maxLife =
+    winLevel >= 5
+      ? getRandom(36, 60)
+      : winLevel >= 4
+        ? getRandom(28, 48)
+        : getRandom(24, 42);
   spark.rotationSpeed = getRandom(-0.12, 0.12);
 
   return spark;
@@ -229,11 +459,12 @@ function getOrderedNormalizedRects(symbolRects = []) {
     });
 }
 
-function createSymbolHighlight(rect, index = 0) {
+function createSymbolHighlight(rect, index = 0, winLevel = 3) {
   const normalizedRect = normalizeSymbolRect(rect);
 
   if (!normalizedRect) return null;
 
+  const config = getWinLevelConfig(winLevel);
   const highlight = new Graphics();
 
   const centerX = normalizedRect.x + normalizedRect.width * 0.5;
@@ -245,30 +476,79 @@ function createSymbolHighlight(rect, index = 0) {
   highlight.x = centerX;
   highlight.y = centerY;
   highlight.life = index * -7;
-  highlight.maxLife = 180;
+  highlight.maxLife = config.highlightMaxLife;
   highlight.baseScale = 1;
-  highlight.pulseSpeed = getRandom(0.13, 0.18);
+  highlight.pulseSpeed = getRandom(
+    config.highlightPulseMin,
+    config.highlightPulseMax,
+  );
   highlight.visible = index === 0;
 
   highlight
-    .roundRect(-width * 0.52, -height * 0.52, width * 1.04, height * 1.04, radius)
-    .fill({ color: 0xffd76a, alpha: 0.12 });
+    .roundRect(
+      -width * 0.52,
+      -height * 0.52,
+      width * 1.04,
+      height * 1.04,
+      radius,
+    )
+    .fill({ color: 0xffd76a, alpha: config.highlightFillAlpha });
 
   highlight
-    .roundRect(-width * 0.55, -height * 0.55, width * 1.1, height * 1.1, radius + 3)
-    .stroke({ width: 9, color: 0xffd76a, alpha: 0.2 });
+    .roundRect(
+      -width * 0.57,
+      -height * 0.57,
+      width * 1.14,
+      height * 1.14,
+      radius + 3,
+    )
+    .stroke({
+      width: config.highlightOuterWidth,
+      color: 0xffd76a,
+      alpha: config.highlightOuterAlpha,
+    });
 
   highlight
-    .roundRect(-width * 0.53, -height * 0.53, width * 1.06, height * 1.06, radius + 2)
-    .stroke({ width: 5, color: 0xffd76a, alpha: 0.95 });
+    .roundRect(
+      -width * 0.53,
+      -height * 0.53,
+      width * 1.06,
+      height * 1.06,
+      radius + 2,
+    )
+    .stroke({
+      width: config.highlightMainWidth,
+      color: 0xffd76a,
+      alpha: 0.95,
+    });
 
   highlight
-    .roundRect(-width * 0.48, -height * 0.48, width * 0.96, height * 0.96, radius)
-    .stroke({ width: 2, color: 0xffffff, alpha: 0.88 });
+    .roundRect(
+      -width * 0.48,
+      -height * 0.48,
+      width * 0.96,
+      height * 0.96,
+      radius,
+    )
+    .stroke({
+      width: winLevel >= 5 ? 3 : 2,
+      color: 0xffffff,
+      alpha: 0.88,
+    });
 
   highlight
-    .roundRect(-width * 0.62, -height * 0.62, width * 1.24, height * 1.24, radius + 7)
-    .stroke({ width: 2, color: 0x62d6ff, alpha: 0.34 });
+    .roundRect(
+      -width * 0.64,
+      -height * 0.64,
+      width * 1.28,
+      height * 1.28,
+      radius + 7,
+    )
+    .stroke({
+      width: winLevel >= 5 ? 4 : winLevel >= 4 ? 3 : 2,
+      color: 0x62d6ff,
+      alpha: config.highlightBlueAlpha,
+    });
 
   return highlight;
 }
@@ -284,31 +564,45 @@ function createPaylineGlow(options = {}) {
       ? Number(options.y)
       : height * 0.48;
 
+  const winLevel = options.winLevel || 3;
+  const config = getWinLevelConfig(winLevel);
   const glow = new Graphics();
 
   glow.life = 0;
-  glow.maxLife = 58;
+  glow.maxLife = config.paylineMaxLife;
   glow.alpha = 0.95;
 
   glow
     .moveTo(width * 0.12, y)
     .lineTo(width * 0.88, y)
-    .stroke({ width: 10, color: 0xffd76a, alpha: 0.16 });
+    .stroke({
+      width: config.paylineOuterWidth,
+      color: 0xffd76a,
+      alpha: 0.18,
+    });
 
   glow
     .moveTo(width * 0.12, y)
     .lineTo(width * 0.88, y)
-    .stroke({ width: 5, color: 0xffd76a, alpha: 0.5 });
+    .stroke({
+      width: Math.max(5, config.paylineCoreWidth + 2),
+      color: 0xffd76a,
+      alpha: 0.54,
+    });
 
   glow
     .moveTo(width * 0.12, y)
     .lineTo(width * 0.88, y)
-    .stroke({ width: 2, color: 0xffffff, alpha: 0.8 });
+    .stroke({
+      width: config.paylineCoreWidth,
+      color: 0xffffff,
+      alpha: 0.84,
+    });
 
   return glow;
 }
 
-function createWinSweep(symbolRects = []) {
+function createWinSweep(symbolRects = [], winLevel = 3) {
   const normalizedRects = getOrderedNormalizedRects(symbolRects);
 
   if (normalizedRects.length < 2) {
@@ -318,13 +612,17 @@ function createWinSweep(symbolRects = []) {
   const points = normalizedRects.map(getRectCenter);
   const sweep = new Graphics();
 
+  const config = getWinLevelConfig(winLevel);
+
   sweep.points = points;
   sweep.life = 0;
-  sweep.maxLife = 96;
+  sweep.maxLife = config.sweepMaxLife;
   sweep.alpha = 1;
+  sweep.winLevel = winLevel;
   sweep.headRadius = Math.max(
     5,
-    Math.min(normalizedRects[0].width, normalizedRects[0].height) * 0.075,
+    Math.min(normalizedRects[0].width, normalizedRects[0].height) *
+      config.sweepHeadMultiplier,
   );
 
   drawWinSweep(sweep, 0);
@@ -337,6 +635,7 @@ function drawWinSweep(sweep, progress) {
 
   const points = sweep.points;
   const clampedProgress = Math.max(0, Math.min(1, progress));
+  const winLevel = sweep.winLevel || 3;
 
   sweep.clear();
 
@@ -351,7 +650,11 @@ function drawWinSweep(sweep, progress) {
 
   visiblePoints.push(points[0]);
 
-  for (let index = 1; index <= fullSegments && index < points.length; index += 1) {
+  for (
+    let index = 1;
+    index <= fullSegments && index < points.length;
+    index += 1
+  ) {
     visiblePoints.push(points[index]);
   }
 
@@ -385,10 +688,12 @@ function drawWinSweep(sweep, progress) {
     });
   };
 
-  drawPolyline(18, 0xffd76a, 0.16);
-  drawPolyline(11, 0xffd76a, 0.34);
-  drawPolyline(6, 0xfff0a8, 0.92);
-  drawPolyline(2.5, 0xffffff, 0.96);
+  const config = getWinLevelConfig(winLevel);
+
+  drawPolyline(config.sweepOuterWidth, 0xffd76a, 0.16);
+  drawPolyline(config.sweepMiddleWidth, 0xffd76a, 0.34);
+  drawPolyline(config.sweepCoreWidth, 0xfff0a8, 0.92);
+  drawPolyline(winLevel >= 5 ? 4 : winLevel >= 4 ? 3 : 2.5, 0xffffff, 0.96);
 
   const head = visiblePoints[visiblePoints.length - 1];
 
@@ -399,16 +704,17 @@ function drawWinSweep(sweep, progress) {
   sweep.fill({ color: 0xffffff, alpha: 0.9 });
 }
 
-function createRectSpark(rect) {
+function createRectSpark(rect, winLevel = 3) {
   const normalizedRect = normalizeSymbolRect(rect);
 
   if (!normalizedRect) return null;
 
+  const config = getWinLevelConfig(winLevel);
   const spark = new Graphics();
 
-  const size = getRandom(1.8, 4.4);
+  const size = getRandom(config.rectSparkSizeMin, config.rectSparkSizeMax);
   const angle = getRandom(0, Math.PI * 2);
-  const speed = getRandom(1.2, 3.6);
+  const speed = getRandom(config.rectSparkSpeedMin, config.rectSparkSpeedMax);
   const color = Math.random() > 0.35 ? 0xffd76a : 0xffffff;
 
   spark.circle(0, 0, size);
@@ -419,7 +725,12 @@ function createRectSpark(rect) {
   spark.vx = Math.cos(angle) * speed;
   spark.vy = Math.sin(angle) * speed;
   spark.life = 0;
-  spark.maxLife = getRandom(34, 62);
+  spark.maxLife =
+    winLevel >= 5
+      ? getRandom(48, 82)
+      : winLevel >= 4
+        ? getRandom(38, 70)
+        : getRandom(34, 62);
   spark.rotationSpeed = getRandom(-0.1, 0.1);
 
   return spark;
@@ -470,9 +781,13 @@ function updateWinBursts(deltaTime) {
     const burst = winBursts[index];
 
     burst.life += deltaTime;
-    burst.scale.x += 0.028 * deltaTime;
-    burst.scale.y += 0.028 * deltaTime;
-    burst.alpha -= 0.016 * deltaTime;
+
+    const scaleSpeed = burst.scaleSpeed || 0.028;
+    const fadeSpeed = burst.fadeSpeed || 0.016;
+
+    burst.scale.x += scaleSpeed * deltaTime;
+    burst.scale.y += scaleSpeed * deltaTime;
+    burst.alpha -= fadeSpeed * deltaTime;
 
     if (burst.alpha <= 0) {
       winLayer.removeChild(burst);
@@ -651,6 +966,7 @@ export async function initPixiEffects(options = {}) {
       updateSymbolHighlights(ticker.deltaTime);
       updatePaylineGlows(ticker.deltaTime);
       updateWinSweeps(ticker.deltaTime);
+      updateScreenShake(ticker.deltaTime);
     });
 
     rafReady = true;
@@ -672,20 +988,26 @@ export function playPixiWinEffect(options = {}) {
     showPayline = false,
     showSweep = true,
     paylineY = height * 0.48,
-    sparkCount = 32,
-    lineSparkCount = 18,
+    winLevel = 3,
   } = options;
 
+  const config = getWinLevelConfig(winLevel);
+  const sparkCount = config.sparkCount;
+  const lineSparkCount = config.lineSparkCount;
   const orderedRects = getOrderedNormalizedRects(symbolRects);
 
-  flashAlpha = 1;
+  flashAlpha = config.flashAlpha;
+  startScreenShake(config);
 
-  const burst = createWinBurst(width, height);
+  const burst = createWinBurst(width, height, winLevel);
   winBursts.push(burst);
   winLayer.addChild(burst);
 
   if (showPayline) {
-    const paylineGlow = createPaylineGlow({ y: paylineY });
+    const paylineGlow = createPaylineGlow({
+      y: paylineY,
+      winLevel,
+    });
 
     if (paylineGlow) {
       paylineGlows.push(paylineGlow);
@@ -694,7 +1016,7 @@ export function playPixiWinEffect(options = {}) {
   }
 
   orderedRects.forEach((rect, index) => {
-    const highlight = createSymbolHighlight(rect, index);
+    const highlight = createSymbolHighlight(rect, index, winLevel);
 
     if (highlight) {
       symbolHighlights.push(highlight);
@@ -703,7 +1025,7 @@ export function playPixiWinEffect(options = {}) {
   });
 
   if (showSweep && orderedRects.length >= 2) {
-    const sweep = createWinSweep(orderedRects);
+    const sweep = createWinSweep(orderedRects, winLevel);
 
     if (sweep) {
       winSweeps.push(sweep);
@@ -711,9 +1033,11 @@ export function playPixiWinEffect(options = {}) {
     }
   }
 
+  const rectSparkCount = config.rectSparkCount;
+
   for (const rect of orderedRects) {
-    for (let index = 0; index < 4; index += 1) {
-      const spark = createRectSpark(rect);
+    for (let index = 0; index < rectSparkCount; index += 1) {
+      const spark = createRectSpark(rect, winLevel);
 
       if (spark) {
         winSparks.push(spark);
@@ -723,13 +1047,13 @@ export function playPixiWinEffect(options = {}) {
   }
 
   for (let index = 0; index < sparkCount; index += 1) {
-    const spark = createWinSpark(width, height);
+    const spark = createWinSpark(width, height, winLevel);
     winSparks.push(spark);
     winLayer.addChild(spark);
   }
 
   for (let index = 0; index < lineSparkCount; index += 1) {
-    const spark = createLineSpark(width, height);
+    const spark = createLineSpark(width, height, winLevel);
     winSparks.push(spark);
     winLayer.addChild(spark);
   }
@@ -748,6 +1072,10 @@ export function destroyPixiEffects() {
   paylineGlows.length = 0;
   winSweeps.length = 0;
   flashAlpha = 0;
+  shakeState.life = 0;
+  shakeState.maxLife = 0;
+  shakeState.power = 0;
+  resetScreenShake();
 
   if (pixiApp) {
     pixiApp.destroy(true, {

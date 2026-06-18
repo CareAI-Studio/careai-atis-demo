@@ -15,6 +15,8 @@ let currentContainer = null;
 let currentGrid = null;
 let isInitialized = false;
 let tickerReady = false;
+let reflectionOverlay = null;
+let reflectionWidth = 0;
 
 const spinState = {
   active: false,
@@ -93,23 +95,23 @@ const SYMBOL_ASSET_MAP = {
 };
 
 const SYMBOL_ASSET_SCALE_MAP = {
-  AI: 1.42,
+  AI: 1.5,
 
-  "💎": 1.18,
-  "♦": 1.18,
-  "◆": 1.18,
+  "💎": 1.28,
+  "♦": 1.28,
+  "◆": 1.28,
 
-  "♡": 1.28,
-  "♥": 1.28,
+  "♡": 1.38,
+  "♥": 1.38,
 
-  "☁": 1.36,
-  "💬": 1.36,
+  "☁": 1.46,
+  "💬": 1.46,
 
-  "⚡": 1.22,
-  "🤖": 1.34,
+  "⚡": 1.34,
+  "🤖": 1.42,
 
-  "⭐": 1.22,
-  "★": 1.22,
+  "⭐": 1.34,
+  "★": 1.34,
 };
 
 const SYMBOL_ASSET_Y_OFFSET_MAP = {
@@ -1065,21 +1067,58 @@ function drawSymbolTileContent(tile, symbol, width, height, options = {}) {
   tile.glyphLayer = glyphLayer;
 
   if (isSpinning) {
+    if (tile.glyphLayer) {
+      tile.glyphLayer.alpha = 0.42;
+      tile.glyphLayer.scale.y = 1.12;
+    }
+
     const motionShade = new Graphics();
     motionShade.rect(0, 0, width, height);
     motionShade.fill({
       color: 0x000000,
-      alpha: 0.05,
+      alpha: 0.1,
     });
     tile.addChild(motionShade);
 
-    const motionLine = new Graphics();
-    motionLine.roundRect(8, height * 0.48, width - 16, 3, 2);
-    motionLine.fill({
-      color: 0xffffff,
-      alpha: 0.11,
+    const speedGlow = new Graphics();
+    speedGlow.roundRect(
+      width * 0.18,
+      height * 0.08,
+      width * 0.64,
+      height * 0.84,
+      14,
+    );
+    speedGlow.fill({
+      color: 0x7be4ff,
+      alpha: 0.045,
     });
-    tile.addChild(motionLine);
+    tile.addChild(speedGlow);
+
+    for (let index = 0; index < 3; index += 1) {
+      const motionLine = new Graphics();
+      const y = height * (0.28 + index * 0.22);
+
+      motionLine.roundRect(width * 0.12, y, width * 0.76, 3, 2);
+      motionLine.fill({
+        color: 0xffffff,
+        alpha: 0.11 - index * 0.02,
+      });
+      tile.addChild(motionLine);
+    }
+
+    const verticalBlur = new Graphics();
+    verticalBlur.roundRect(
+      width * 0.36,
+      height * 0.06,
+      width * 0.28,
+      height * 0.88,
+      16,
+    );
+    verticalBlur.fill({
+      color: 0xffffff,
+      alpha: 0.035,
+    });
+    tile.addChild(verticalBlur);
   }
 
   if (isWinning) {
@@ -1217,6 +1256,119 @@ function drawReelSeparators(parent, width, height, columns) {
     });
     parent.addChild(separatorLight);
   }
+}
+
+function drawPremiumReelDepth(parent, layout) {
+  const { width, height, columns, padding, columnGap, tileWidth } = layout;
+
+  for (let reelIndex = 0; reelIndex < columns; reelIndex += 1) {
+    const reelX = padding + reelIndex * (tileWidth + columnGap);
+
+    const centerGlow = new Graphics();
+    centerGlow.roundRect(
+      reelX + tileWidth * 0.12,
+      padding * 0.85,
+      tileWidth * 0.76,
+      height - padding * 1.7,
+      18,
+    );
+    centerGlow.fill({
+      color: 0x6bdcff,
+      alpha: 0.035,
+    });
+    parent.addChild(centerGlow);
+
+    const leftShade = new Graphics();
+    leftShade.roundRect(
+      reelX - columnGap * 0.25,
+      padding * 0.85,
+      tileWidth * 0.22,
+      height - padding * 1.7,
+      16,
+    );
+    leftShade.fill({
+      color: 0x000814,
+      alpha: 0.26,
+    });
+    parent.addChild(leftShade);
+
+    const rightShade = new Graphics();
+    rightShade.roundRect(
+      reelX + tileWidth * 0.78,
+      padding * 0.85,
+      tileWidth * 0.22,
+      height - padding * 1.7,
+      16,
+    );
+    rightShade.fill({
+      color: 0x000814,
+      alpha: 0.24,
+    });
+    parent.addChild(rightShade);
+
+    const topCurve = new Graphics();
+    topCurve.ellipse(
+      reelX + tileWidth * 0.5,
+      padding + 3,
+      tileWidth * 0.46,
+      Math.max(8, height * 0.035),
+    );
+    topCurve.fill({
+      color: 0xffffff,
+      alpha: 0.04,
+    });
+    parent.addChild(topCurve);
+
+    const bottomCurve = new Graphics();
+    bottomCurve.ellipse(
+      reelX + tileWidth * 0.5,
+      height - padding - 3,
+      tileWidth * 0.46,
+      Math.max(8, height * 0.035),
+    );
+    bottomCurve.fill({
+      color: 0x000000,
+      alpha: 0.18,
+    });
+    parent.addChild(bottomCurve);
+  }
+
+  const reelGlassSweep = new Graphics();
+  reelGlassSweep.moveTo(width * 0.04, height * 0.06);
+  reelGlassSweep.lineTo(width * 0.2, height * 0.06);
+  reelGlassSweep.lineTo(width * 0.48, height * 0.94);
+  reelGlassSweep.lineTo(width * 0.32, height * 0.94);
+  reelGlassSweep.closePath();
+  reelGlassSweep.fill({
+    color: 0xffffff,
+    alpha: 0.035,
+  });
+  parent.addChild(reelGlassSweep);
+}
+
+function createAnimatedReflection(parent, layout) {
+  const { width, height } = layout;
+
+  reflectionWidth = width;
+
+  const reflection = new Graphics();
+
+  reflection.moveTo(0, 0);
+  reflection.lineTo(width * 0.18, 0);
+  reflection.lineTo(width * 0.42, height);
+  reflection.lineTo(width * 0.24, height);
+  reflection.closePath();
+
+  reflection.fill({
+    color: 0xffffff,
+    alpha: 0.045,
+  });
+
+  reflection.x = -width * 0.55;
+
+  parent.addChild(reflection);
+
+  return reflection;
 }
 
 function drawGlassOverlay(width, height) {
@@ -1397,8 +1549,8 @@ function drawStaticReel(reel, reelIndex, layout, options = {}) {
 
   if (options.shouldSettle) {
     addSettleAnimation(reelGroup, {
-      duration: options.isTurbo ? 12 : 18,
-      distance: options.isTurbo ? 4 : 8,
+      duration: options.isTurbo ? 14 : 26,
+      distance: options.isTurbo ? 8 : 15,
     });
   }
 }
@@ -1412,7 +1564,13 @@ function createSpinningReel(reelIndex, layout, symbols, options = {}) {
 
   reelContainer.x = reelX;
   reelContainer.y = 0;
-  reelContainer.speed = (isTurbo ? 31 : 19) + reelIndex * (isTurbo ? 2 : 1.5);
+
+  reelContainer.speed = 0;
+  reelContainer.targetSpeed =
+    (isTurbo ? 44 : 26) + reelIndex * (isTurbo ? 3 : 2.1);
+  reelContainer.acceleration =
+    (isTurbo ? 0.18 : 0.095) + reelIndex * (isTurbo ? 0.012 : 0.006);
+
   reelContainer.tiles = [];
 
   const visibleTiles = 6;
@@ -1456,6 +1614,8 @@ function renderGridInternal(grid, options = {}) {
 
   drawBackground(width, height);
   drawReelSeparators(reelsLayer, width, height, columns);
+  drawPremiumReelDepth(reelsLayer, layout);
+  reflectionOverlay = createAnimatedReflection(reelsLayer, layout);
 
   grid.forEach((reel, reelIndex) => {
     drawStaticReel(reel, reelIndex, layout, {
@@ -1479,6 +1639,8 @@ function buildSpinningReels(symbols, options = {}) {
 
   drawBackground(width, height);
   drawReelSeparators(reelsLayer, width, height, columns);
+  drawPremiumReelDepth(reelsLayer, layout);
+  reflectionOverlay = createAnimatedReflection(reelsLayer, layout);
 
   spinState.active = true;
   spinState.symbols = symbols;
@@ -1525,6 +1687,8 @@ function renderStoppingReelsInternal(finalGrid, options = {}) {
 
   drawBackground(width, height);
   drawReelSeparators(reelsLayer, width, height, columns);
+  drawPremiumReelDepth(reelsLayer, layout);
+  reflectionOverlay = createAnimatedReflection(reelsLayer, layout);
 
   spinState.active = stoppedReels < columns;
   spinState.symbols = symbols;
@@ -1569,6 +1733,11 @@ function updateSpinningReels(deltaTime) {
   const minY = padding - stepY;
 
   for (const reel of spinState.reels) {
+    const targetSpeed = reel.targetSpeed || reel.speed || 0;
+    const acceleration = reel.acceleration || 0.08;
+
+    reel.speed += (targetSpeed - reel.speed) * acceleration * deltaTime;
+
     for (const tile of reel.tiles) {
       tile.y += reel.speed * deltaTime;
 
@@ -1606,6 +1775,14 @@ function ensureTicker() {
   pixiApp.ticker.add((ticker) => {
     updateSpinningReels(ticker.deltaTime);
     updateIdleAnimations(ticker.deltaTime);
+
+    if (reflectionOverlay && reflectionWidth > 0) {
+      reflectionOverlay.x += 0.45 * ticker.deltaTime;
+
+      if (reflectionOverlay.x > reflectionWidth * 1.2) {
+        reflectionOverlay.x = -reflectionWidth * 0.55;
+      }
+    }
   });
 
   tickerReady = true;

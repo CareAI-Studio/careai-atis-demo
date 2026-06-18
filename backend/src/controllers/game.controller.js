@@ -84,7 +84,7 @@ const BLANK_SYMBOL = {
   },
 };
 
-const BLANK_SYMBOL_WEIGHT = 5;
+const BLANK_SYMBOL_WEIGHT = 0;
 
 const PAYLINES = [
   { id: 1, label: "Linie 1", rows: [1, 1, 1, 1, 1] },
@@ -114,15 +114,17 @@ const PAYLINES = [
   { id: 25, label: "Linie 25", rows: [2, 0, 2, 0, 2] },
 ];
 
-const DEFAULT_WIN_CHANCE = 0.04;
+const DEFAULT_WIN_CHANCE = 0.1;
 
 function createWeightedSymbolPool(symbols) {
+  const payingSymbols = symbols.filter((symbol) => symbol.id !== "blank");
+
   const blankSymbols = Array.from(
     { length: BLANK_SYMBOL_WEIGHT },
     () => BLANK_SYMBOL,
   );
 
-  return [...symbols, ...blankSymbols];
+  return [...payingSymbols, ...blankSymbols];
 }
 
 function isPayingSymbol(symbol) {
@@ -138,6 +140,11 @@ function getRandomSymbol(symbols) {
 
 function getRandomPayingSymbol(symbols) {
   const payingSymbols = symbols.filter(isPayingSymbol);
+
+  if (!payingSymbols.length) {
+    return null;
+  }
+
   const index = Math.floor(Math.random() * payingSymbols.length);
 
   return payingSymbols[index];
@@ -312,7 +319,7 @@ function calculateWin(grid, bet) {
   }, lineResults[0]);
 
   const winningLines = lineResults.filter((result) => result.payout > 0);
-  const totalPayout = winningLines.reduce(
+  const linePayoutTotal = winningLines.reduce(
     (sum, result) => sum + result.payout,
     0,
   );
@@ -333,6 +340,8 @@ function calculateWin(grid, bet) {
       activePaylines: ACTIVE_PAYLINES,
     };
   }
+
+  const totalPayout = bet + linePayoutTotal;
 
   return {
     payout: totalPayout,
@@ -367,7 +376,7 @@ export function spinDemoGame(req, res) {
     bet,
     activeLines: PAYLINES.length,
     lineBet: getLineBet(bet),
-    paytableVersion: "v1.4.1-line-bet",
+    paytableVersion: "v1.4.4-gameplay-feel",
     grid,
     result,
     timestamp: new Date().toISOString(),
