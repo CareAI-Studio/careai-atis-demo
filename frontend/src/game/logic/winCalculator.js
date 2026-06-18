@@ -130,7 +130,7 @@ export function calculateWin(grid, bet) {
   }, lineResults[0]);
 
   const winningLines = lineResults.filter((result) => result.payout > 0);
-  const totalPayout = winningLines.reduce(
+  const linePayoutTotal = winningLines.reduce(
     (sum, result) => sum + result.payout,
     0,
   );
@@ -151,6 +151,8 @@ export function calculateWin(grid, bet) {
       activePaylines: ACTIVE_PAYLINES,
     };
   }
+
+  const totalPayout = bet + linePayoutTotal;
 
   return {
     payout: totalPayout,

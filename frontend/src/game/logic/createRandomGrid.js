@@ -11,15 +11,17 @@ const BLANK_SYMBOL = {
   },
 };
 
-const BLANK_SYMBOL_WEIGHT = 5;
+const BLANK_SYMBOL_WEIGHT = 0;
 
 function createWeightedSymbolPool(symbols) {
+  const payingSymbols = symbols.filter((symbol) => symbol.id !== "blank");
+
   const blankSymbols = Array.from(
     { length: BLANK_SYMBOL_WEIGHT },
     () => BLANK_SYMBOL,
   );
 
-  return [...symbols, ...blankSymbols];
+  return [...payingSymbols, ...blankSymbols];
 }
 
 function isPayingSymbol(symbol) {
@@ -61,7 +63,7 @@ export function createRandomGrid(symbols, reelsCount = 5, rowsCount = 3) {
   return grid;
 }
 
-export function createDemoFinalGrid(symbols, winChance = 0.04) {
+export function createDemoFinalGrid(symbols, winChance = 0.10) {
   const grid = createRandomGrid(symbols);
   const shouldForceWin = Math.random() < winChance;
 
