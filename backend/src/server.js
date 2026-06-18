@@ -15,19 +15,30 @@ const allowedOrigins = [
   process.env.CLIENT_ORIGIN || "http://localhost:5173",
   "http://localhost:5173",
   "http://localhost:5174",
-];
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
+  "http://192.168.0.162:5173",
+  "https://atis.careai.cz",
+].filter(Boolean);
 
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Povolit požadavky bez originu: curl, health check, serverové testy apod.
+      if (!origin) {
         callback(null, true);
         return;
       }
 
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      console.warn(`CORS blocked origin: ${origin}`);
       callback(new Error(`CORS blocked origin: ${origin}`));
     },
-  })
+  }),
 );
 
 app.use(express.json());

@@ -2,6 +2,8 @@ export function createCodeInfoModal() {
   const element = document.createElement("div");
   element.className = "code-modal";
 
+  let previouslyFocusedElement = null;
+
   element.innerHTML = `
     <div class="code-modal__backdrop" data-close="true"></div>
 
@@ -20,7 +22,8 @@ export function createCodeInfoModal() {
         <p class="code-modal__text">
           Ukázkový frontend herní prototyp pro pozici Frontend Game Developer / PixiJS Developer.
           Projekt kombinuje responzivní UI, herní logiku, stav aplikace, AUTO/TURBO režim,
-          25 výherních linií, backend API v Node.js / Express, bezpečný frontend fallback
+          25 výherních linií, vlastní PNG asset symboly, paytable, Web Audio API,
+          Screen Wake Lock API, backend API v Node.js / Express, bezpečný frontend fallback
           a postupný přechod vizuální vrstvy z DOM/CSS do PixiJS canvasu.
         </p>
 
@@ -33,7 +36,7 @@ export function createCodeInfoModal() {
 
           <div class="code-modal__card">
             <h3>Herní automat</h3>
-            <p>SlotGame řeší hlavní stav hry, kredity, sázku, výhru, spin, AUTO, TURBO a napojení DOM i PixiJS rendereru.</p>
+            <p>SlotGame řeší hlavní stav hry, kredity, sázku, výhru, spin, AUTO, TURBO, SOUND, paytable a napojení DOM i PixiJS rendereru.</p>
             <code>src/game/SlotGame.js</code>
           </div>
 
@@ -45,8 +48,44 @@ export function createCodeInfoModal() {
 
           <div class="code-modal__card">
             <h3>PixiJS efekty</h3>
-            <p>Oddělená canvas vrstva přidává ambient glow, částice, win flash, burst efekt, jiskry a výherní feedback.</p>
+            <p>Oddělená canvas vrstva přidává ambient glow, částice, win flash, burst efekt, jiskry, výherní linky a úrovně výherních efektů.</p>
             <code>src/pixi-effects.js</code>
+          </div>
+
+          <div class="code-modal__card">
+            <h3>PNG asset symboly</h3>
+            <p>Symboly automatu jsou vlastní PNG assety. PixiJS používá asset loading a texture cache, paytable používá stejné symboly jako válce.</p>
+            <code>src/assets/symbols/</code>
+          </div>
+
+          <div class="code-modal__card">
+            <h3>Paytable</h3>
+            <p>Výherní tabulka vysvětluje 25 line-bet systém, hodnoty symbolů pro 3×, 4× a 5× shodu a funguje i v mobilním zobrazení.</p>
+            <code>PAYTABLE UI + line bet</code>
+          </div>
+
+          <div class="code-modal__card">
+            <h3>Win lines</h3>
+            <p>Výherní symboly se zvýrazní podle konkrétní payline. PixiJS overlay vykreslí světelnou linku i pro různé tvary výherních linií.</p>
+            <code>winningPositions + PixiJS overlay</code>
+          </div>
+
+          <div class="code-modal__card">
+            <h3>Win level effects</h3>
+            <p>3×, 4× a 5× výhry mají rozdílnou intenzitu efektů, částic, glow, flash, zvuků a u větší výhry i silnější impact feedback.</p>
+            <code>winLevel 3 / 4 / 5</code>
+          </div>
+
+          <div class="code-modal__card">
+            <h3>Web Audio API</h3>
+            <p>Zvuky jsou generované přímo v prohlížeči bez externích audio souborů. Demo má zvuk tlačítek, spinu, zastavení válců, výhry a no-credit stavu.</p>
+            <code>src/audio/soundManager.js</code>
+          </div>
+
+          <div class="code-modal__card">
+            <h3>Screen Wake Lock</h3>
+            <p>Na podporovaných mobilních prohlížečích demo brání zamknutí telefonu během hraní nebo AUTO režimu.</p>
+            <code>src/utils/wakeLockManager.js</code>
           </div>
 
           <div class="code-modal__card">
@@ -69,7 +108,7 @@ export function createCodeInfoModal() {
 
           <div class="code-modal__card">
             <h3>25 paylines</h3>
-            <p>Výhra se nepočítá jen na jedné prostřední linii. Demo používá 25 připravených payline patternů.</p>
+            <p>Výhra se nepočítá jen na jedné prostřední linii. Demo používá 25 připravených payline patternů a line-bet výpočet.</p>
             <code>src/game/logic/paylines.js</code>
           </div>
 
@@ -92,15 +131,9 @@ export function createCodeInfoModal() {
           </div>
 
           <div class="code-modal__card">
-            <h3>Win feedback</h3>
-            <p>Při výhře se kombinuje PixiJS particle efekt, výherní zvýraznění symbolů a CSS animace frame, například krátký screen shake.</p>
-            <code>PixiJS + CSS animation</code>
-          </div>
-
-          <div class="code-modal__card">
-            <h3>Blank symboly</h3>
-            <p>Non-paying symboly vyvažují četnost výher při 25 aktivních liniích a dělají demo uvěřitelnější.</p>
-            <code>src/game/gameConfig.js</code>
+            <h3>Veřejné demo</h3>
+            <p>Demo je dostupné přes veřejnou doménu a běží jako prezentovatelný portfolio projekt pro desktop i mobilní prohlížeč.</p>
+            <code>atis.careai.cz</code>
           </div>
 
           <div class="code-modal__card">
@@ -117,7 +150,13 @@ export function createCodeInfoModal() {
           <strong>PixiJS</strong>
           <strong>Node.js</strong>
           <strong>Express</strong>
+          <strong>Web Audio API</strong>
+          <strong>Wake Lock API</strong>
+          <strong>PNG Assets</strong>
           <strong>25 Paylines</strong>
+          <strong>Paytable</strong>
+          <strong>Win Effects</strong>
+          <strong>Backend API</strong>
           <strong>API fallback</strong>
           <strong>Canvas refactor</strong>
         </div>
@@ -131,11 +170,25 @@ export function createCodeInfoModal() {
   const close = () => {
     element.classList.remove("is-open");
     document.body.classList.remove("body--locked");
+
+    if (previouslyFocusedElement instanceof HTMLElement) {
+      previouslyFocusedElement.focus({
+        preventScroll: true,
+      });
+    }
   };
 
   const open = () => {
+    previouslyFocusedElement = document.activeElement;
+
     element.classList.add("is-open");
     document.body.classList.add("body--locked");
+
+    window.setTimeout(() => {
+      closeButton?.focus?.({
+        preventScroll: true,
+      });
+    }, 0);
   };
 
   backdrop.addEventListener("click", close);

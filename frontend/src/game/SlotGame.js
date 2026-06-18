@@ -736,10 +736,53 @@ export class SlotGame {
       "slot-game__paytable-backdrop--open",
     );
     this.elements.paytableBackdrop.setAttribute("aria-hidden", "false");
+
+    window.setTimeout(() => {
+      this.elements.paytableCloseButton?.focus?.({
+        preventScroll: true,
+      });
+    }, 0);
+  }
+
+  openPaytable() {
+    if (!this.elements.paytableBackdrop) return;
+
+    this.elements.paytableBackdrop.classList.add(
+      "slot-game__paytable-backdrop--open",
+    );
+    this.elements.paytableBackdrop.setAttribute("aria-hidden", "false");
+
+    window.setTimeout(() => {
+      this.elements.paytableCloseButton?.focus?.({
+        preventScroll: true,
+      });
+    }, 0);
   }
 
   closePaytable() {
     if (!this.elements.paytableBackdrop) return;
+
+    const wasOpen = this.elements.paytableBackdrop.classList.contains(
+      "slot-game__paytable-backdrop--open",
+    );
+
+    const activeElement = document.activeElement;
+
+    if (
+      wasOpen &&
+      this.elements.paytableButton &&
+      activeElement instanceof HTMLElement &&
+      this.elements.paytableBackdrop.contains(activeElement)
+    ) {
+      this.elements.paytableButton.focus({
+        preventScroll: true,
+      });
+    } else if (
+      activeElement instanceof HTMLElement &&
+      this.elements.paytableBackdrop.contains(activeElement)
+    ) {
+      activeElement.blur();
+    }
 
     this.elements.paytableBackdrop.classList.remove(
       "slot-game__paytable-backdrop--open",
